@@ -10,15 +10,15 @@ class HtmlTag:
 
     def __enter__(self):
         self.__class__.level += 1
-        type(self).page += f"{'  ' * self.level}<{self.tag}>" + ['\n', ''][self.inline]
+        type(self).page += f"{'    ' * self.level}<{self.tag}>" + ['\n', ''][self.inline]
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        type(self).page += f"{['  ' * self.__class__.level, ''][self.inline]}</{self.tag}>\n"
+        type(self).page += f"{['    ' * self.__class__.level, ''][self.inline]}</{self.tag}>\n"
         self.__class__.level -= 1
 
     def fill(self, text):
-        type(self).page += ['  ' * (self.__class__.level + 1), ''][self.inline] + text + ['\n', ''][self.inline]
+        type(self).page += ['    ' * (self.__class__.level + 1), ''][self.inline] + text + ['\n', ''][self.inline]
 
     @classmethod
     def clear(cls):
@@ -34,14 +34,14 @@ def generate_html():
                 pass
             with HtmlTag('main'):
                 with HtmlTag('section'):
-                    with HtmlTag('h1', inline=True) as header:
-                        header.fill('Первая секция')
+                    with HtmlTag('h1', inline=True) as header1:
+                        header1.fill('Первая секция')
                 with HtmlTag('section'):
-                    with HtmlTag('h1', inline=True) as header:
-                        header.fill('Вторая секция')
+                    with HtmlTag('h1', inline=True) as header2:
+                        header2.fill('Вторая секция')
                     with HtmlTag('div'):
-                        with HtmlTag('a', inline=True) as section:
-                            section.fill('https://github.com/AlekseyKhaleev/HTML-generator.git')
+                        with HtmlTag('a', inline=True) as reference:
+                            reference.fill('https://github.com/AlekseyKhaleev/HTML-generator.git')
             with HtmlTag("footer", inline=True):
                 pass
     return HtmlTag.page
