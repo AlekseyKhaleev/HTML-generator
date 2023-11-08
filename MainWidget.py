@@ -3,12 +3,10 @@ from PyQt6 import QtWidgets
 import html  # Это наш конвертированный файл дизайна
 from enum import IntEnum
 from functools import partial
+from utils import generate_html
 
 
 class ExampleApp(QtWidgets.QMainWindow, html.Ui_MainWindow):
-    class HtmlView(IntEnum):
-        TEXT = 0
-        RENDER = 1
 
     def __init__(self):
         # Это здесь нужно для доступа к переменным, методам
@@ -17,13 +15,13 @@ class ExampleApp(QtWidgets.QMainWindow, html.Ui_MainWindow):
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
 
         self.template_data = {}
-        self.text_edit.setText("text")
-        self.render_edit.setText("render")
-        self.html_browser.setCurrentIndex(self.HtmlView.TEXT)
+        self.data = ""
 
         # -------------------------- connections----------------------------------------
-        self.text_btn.clicked.connect(partial(self.switch_view, self.HtmlView.TEXT))
-        self.render_btn.clicked.connect(partial(self.switch_view, self.HtmlView.RENDER))
+        # self.text_btn.clicked.connect(partial(self.switch_view, self.HtmlView.TEXT))
+        # self.render_btn.clicked.connect(partial(self.switch_view, self.HtmlView.RENDER))
+        self.text_btn.clicked.connect(self.set_text)
+        self.render_btn.clicked.connect(self.set_html)
         self.generate_btn.clicked.connect(self.generate)
         self.sections_btn.clicked.connect(self.set_sections)
         self.divs_btn.clicked.connect(self.set_divs)
@@ -35,10 +33,16 @@ class ExampleApp(QtWidgets.QMainWindow, html.Ui_MainWindow):
         self.template_data['divs'] = self.divs_spin.value()
 
     def generate(self):
-        self.text_edit.setText(' + '.join(map(str, self.template_data.values())))
+        # self.text_edit.setText(' + '.join(map(str, self.template_data.values())))
+        self.text_edit.clear()
+        self.data = generate_html()
+        self.set_text()
 
-    def switch_view(self, page_index):
-        self.html_browser.setCurrentIndex(page_index)
+    def set_text(self):
+        self.text_edit.setPlainText(self.data)
+
+    def set_html(self):
+        self.text_edit.setHtml(self.data)
 
 
 def main():

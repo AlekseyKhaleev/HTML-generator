@@ -2,9 +2,11 @@ class HtmlTag:
     level = -1
     page = "<!DOCTYPE html>\n"
 
-    def __init__(self, tag, *, inline=False):
+    def __init__(self, tag, *, inline=False, new=False):
         self.tag = tag
         self.inline = inline
+        if new:
+            self.__class__.page = "<!DOCTYPE html>\n"
 
     def __enter__(self):
         self.__class__.level += 1
@@ -18,9 +20,13 @@ class HtmlTag:
     def fill(self, text):
         type(self).page += ['  ' * (self.__class__.level + 1), ''][self.inline] + text + ['\n', ''][self.inline]
 
+    @classmethod
+    def clear(cls):
+        cls.page = ""
 
-if __name__ == '__main__':
-    with HtmlTag('html'):
+
+def generate_html():
+    with HtmlTag('html', new=True):
         with HtmlTag('head'):
             pass
         with HtmlTag('body'):
@@ -33,10 +39,13 @@ if __name__ == '__main__':
                 with HtmlTag('section'):
                     with HtmlTag('h1', inline=True) as header:
                         header.fill('Вторая секция')
-                    with HtmlTag('a', inline=True) as section:
-                        section.fill('https://stepik.org/media/attachments/course/98974/watch_me.mp4')
+                    with HtmlTag('div'):
+                        with HtmlTag('a', inline=True) as section:
+                            section.fill('https://github.com/AlekseyKhaleev/HTML-generator.git')
             with HtmlTag("footer", inline=True):
                 pass
+    return HtmlTag.page
 
 
-    print(HtmlTag.page)
+if __name__ == '__main__':
+    print(generate_html())

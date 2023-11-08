@@ -43,28 +43,6 @@ class Ui_MainWindow(object):
         self.generate_btn = QtWidgets.QPushButton(parent=self.centralwidget)
         self.generate_btn.setGeometry(QtCore.QRect(590, 280, 75, 24))
         self.generate_btn.setObjectName("generate_btn")
-        self.html_browser = QtWidgets.QStackedWidget(parent=self.centralwidget)
-        self.html_browser.setGeometry(QtCore.QRect(30, 60, 521, 571))
-        self.html_browser.setObjectName("html_browser")
-        self.text_page = QtWidgets.QWidget()
-        self.text_page.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
-        self.text_page.setObjectName("text_page")
-        self.text_edit = QtWidgets.QTextEdit(parent=self.text_page)
-        self.text_edit.setGeometry(QtCore.QRect(0, 0, 521, 571))
-        self.text_edit.setFocusPolicy(QtCore.Qt.FocusPolicy.ClickFocus)
-        self.text_edit.setAcceptDrops(False)
-        self.text_edit.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
-        self.text_edit.setObjectName("text_edit")
-        self.html_browser.addWidget(self.text_page)
-        self.render_page = QtWidgets.QWidget()
-        self.render_page.setObjectName("render_page")
-        self.render_edit = QtWidgets.QTextEdit(parent=self.render_page)
-        self.render_edit.setGeometry(QtCore.QRect(0, 0, 521, 571))
-        self.render_edit.setFocusPolicy(QtCore.Qt.FocusPolicy.ClickFocus)
-        self.render_edit.setAcceptDrops(True)
-        self.render_edit.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
-        self.render_edit.setObjectName("render_edit")
-        self.html_browser.addWidget(self.render_page)
         self.text_btn = QtWidgets.QPushButton(parent=self.centralwidget)
         self.text_btn.setGeometry(QtCore.QRect(40, 20, 75, 24))
         self.text_btn.setObjectName("text_btn")
@@ -74,13 +52,19 @@ class Ui_MainWindow(object):
         self.save_btn = QtWidgets.QPushButton(parent=self.centralwidget)
         self.save_btn.setGeometry(QtCore.QRect(760, 280, 75, 24))
         self.save_btn.setObjectName("save_btn")
+        self.text_edit = QtWidgets.QTextEdit(parent=self.centralwidget)
+        self.text_edit.setGeometry(QtCore.QRect(30, 60, 521, 571))
+        self.text_edit.setFocusPolicy(QtCore.Qt.FocusPolicy.ClickFocus)
+        self.text_edit.setAcceptDrops(False)
+        self.text_edit.setTabChangesFocus(False)
+        self.text_edit.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
+        self.text_edit.setObjectName("text_edit")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.html_browser.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -96,3 +80,11 @@ class Ui_MainWindow(object):
         self.text_btn.setText(_translate("MainWindow", "Text"))
         self.render_btn.setText(_translate("MainWindow", "Render"))
         self.save_btn.setText(_translate("MainWindow", "Save"))
+        self.text_edit.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:\'Segoe UI\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
