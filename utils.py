@@ -25,7 +25,7 @@ class HtmlTag:
         cls.page = ""
 
 
-def generate_html():
+def generate_html(sections=0, tags=0, *, inline=False):
     with HtmlTag('html', new=True):
         with HtmlTag('head'):
             pass
@@ -33,15 +33,11 @@ def generate_html():
             with HtmlTag('header', inline=True):
                 pass
             with HtmlTag('main'):
-                with HtmlTag('section'):
-                    with HtmlTag('h1', inline=True) as header1:
-                        header1.fill('Первая секция')
-                with HtmlTag('section'):
-                    with HtmlTag('h1', inline=True) as header2:
-                        header2.fill('Вторая секция')
-                    with HtmlTag('div'):
-                        with HtmlTag('a', inline=True) as reference:
-                            reference.fill('https://github.com/AlekseyKhaleev/HTML-generator.git')
+                for sect_num in range(sections):
+                    with HtmlTag('section'):
+                        for tag_num in range(tags):
+                            with HtmlTag('div', inline=inline) as div:
+                                div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
             with HtmlTag("footer", inline=True):
                 pass
     return HtmlTag.page
