@@ -1,4 +1,6 @@
-.idea
 
-/src/
 /.idea/
+/non_project_files/
+/__pycache__/
+
+
