@@ -1,7 +1,7 @@
 import sys
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtUiTools import QUiLoader
-import html  # Это наш конвертированный файл дизайна
+import ui_html_gen  # Это наш конвертированный файл дизайна
 from utils import generate_html
 
 
