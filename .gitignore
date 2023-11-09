@@ -1,6 +1,6 @@
 
 /.idea/
 /non_project_files/
-/__pycache__/
+**/__pycache__/
 
 
