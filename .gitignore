@@ -1,2 +1,5 @@
-.idea
+/.idea/
+/non_project_files/
+**/__pycache__/
+*.pyc
 

@@ -1,24 +1,23 @@
-import sys  # sys нужен для передачи argv в QApplication
-
-from PyQt6 import QtWidgets
-from collections import defaultdict as d_dict
-import html  # Это наш конвертированный файл дизайна
+from sys import argv
+from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow
+from ui_gen import Ui_MainWindow
 from utils import generate_html
 
 
-class MainApp(QtWidgets.QMainWindow, html.Ui_MainWindow):
+class MainApp(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.data = ""
 
-        # -------------------------- connections----------------------------------------
-
+        # ---------------------------- connections----------------------------------------
         self.text_btn.clicked.connect(self.set_text)
         self.render_btn.clicked.connect(self.set_html)
         self.generate_btn.clicked.connect(self.generate)
         self.clear_btn.clicked.connect(self.text_edit.clear)
+        self.save_btn.clicked.connect(self.save_modal)
+        # ---------------------------------------------------------------------------------
 
     def generate(self):
         self.text_edit.clear()
@@ -33,9 +32,21 @@ class MainApp(QtWidgets.QMainWindow, html.Ui_MainWindow):
         self.data = self.text_edit.toPlainText()
         self.text_edit.setHtml(self.data)
 
+    def save_modal(self):
+        modal = QInputDialog()
+        modal.setWindowTitle("HTML template saving")
+        modal.setLabelText("Enter filename:")
+        modal.exec()
+        if modal.accepted:
+            self.save_template(modal.textValue())
+
+    def save_template(self, filename):
+        with open(f"templates/{filename}.html", "w") as output:
+            output.write(self.data)
+
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(argv)
     window = MainApp()
     window.show()
     app.exec()

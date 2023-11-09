@@ -1,14 +1,13 @@
 [tool.poetry]
-name = "html-gen"
+name = "html-generator"
 version = "0.1.0"
 description = ""
 authors = ["Aleksey Khaleev <aleksey52nn@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-pyqt6 = "^6.4.2"
-pyqt6-tools = "^6.4.2.3.3"
+python = ">=3.11, <3.13"
+pyside6 = ">=6.6"
 
 
 [build-system]
