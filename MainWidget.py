@@ -1,7 +1,6 @@
-import sys  # sys нужен для передачи argv в QApplication
-
-from PyQt6 import QtWidgets, QtCore
-from collections import defaultdict as d_dict
+import sys
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtUiTools import QUiLoader
 import html  # Это наш конвертированный файл дизайна
 from utils import generate_html
 
@@ -35,20 +34,12 @@ class MainApp(QtWidgets.QMainWindow, html.Ui_MainWindow):
         self.text_edit.setHtml(self.data)
 
     def save_modal(self):
-        modal = QtWidgets.QMessageBox()
-        field = QtWidgets.QLineEdit(parent=modal)
-
-        field.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        accept = QtWidgets.QPushButton("Save")
-        cancel = QtWidgets.QPushButton("Cancel")
-        modal.addButton(cancel, QtWidgets.QMessageBox.ButtonRole.RejectRole)
-        modal.addButton(accept, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
-        modal.setDefaultButton(accept)
-        modal.setWindowTitle("Enter filename:")
+        modal = QtWidgets.QInputDialog()
+        modal.setWindowTitle("HTML template saving")
+        modal.setLabelText("Enter filename:")
         modal.exec()
-        if modal.clickedButton() == accept:
-            self.save_template(field.text())
-            print(field.text())
+        if modal.accepted:
+            self.save_template(modal.textValue())
 
     def save_template(self, filename):
         with open(f"templates/{filename}.html", "w") as output:
