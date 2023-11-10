@@ -20,10 +20,6 @@ class HtmlTag:
     def fill(self, text):
         type(self).page += ['    ' * (self.__class__.level + 1), ''][self.inline] + text + ['\n', ''][self.inline]
 
-    @classmethod
-    def clear(cls):
-        cls.page = ""
-
 
 def generate_html(sections=0, tags=0, *, inline=False):
     with HtmlTag('html', new=True):
@@ -40,8 +36,13 @@ def generate_html(sections=0, tags=0, *, inline=False):
                                 div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
             with HtmlTag("footer", inline=True):
                 pass
+
     return HtmlTag.page
 
+class div_tag:
+    def __init__(self, tag, *, inline=False):
+        self.tag = tag
+        self.inline = inline
 
 if __name__ == '__main__':
     print(generate_html())

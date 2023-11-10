@@ -5,7 +5,6 @@ from sys import argv
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow
 
-
 from ui_gen import Ui_MainWindow
 from utils import generate_html
 
@@ -28,7 +27,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.saved.connect(self.update_templates)
         self.load_btn.clicked.connect(self.load_template)
         # ---------------------------------------------------------------------------------
-
 
     def generate(self):
         self.text_edit.clear()
@@ -56,7 +54,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
             output.write(self.data)
         self.saved.emit()
 
-
     def update_templates(self):
         self.templates.clear()
         self.templates.addItems(self.get_templates())
@@ -70,7 +67,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         with open(f"templates/{path}", "r") as temp:
             self.data = temp.read()
             self.set_text()
-
 
 
 def main():
