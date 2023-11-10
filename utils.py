@@ -1,4 +1,27 @@
-class HtmlTag:
+class HtmlBuilder:
+    """
+    Класс, представляющий HTML тег.
+
+    Attributes:
+        __level (int): Уровень тега.
+        __accumulated_tags (str): Накопленные теги.
+
+    Methods:
+        __init__(self, tag, *, inline = False):
+            Инициализирует новый экземпляр класса.
+
+        __enter__(self) -> 'HtmlTag':
+            Входит в контекст тега.
+
+        __exit__(self, exc_type, exc_value, traceback) -> None:
+            Выходит из контекста тега.
+
+        fill(self, text: str) -> None:
+            Заполняет тег текстом.
+
+        generate_html(cls, sections: int = 0, tags: int = 0, *, inline: bool = False) -> str:
+            Генерирует HTML на основе указанных разделов и тегов.
+    """
     __level = -1
     __accumulated_tags = ""
 
