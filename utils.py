@@ -1,49 +1,102 @@
 class HtmlBuilder:
     """
-    Класс, представляющий HTML тег.
+    Класс для построения HTML-тегов во вложенной структуре.
 
     Attributes:
-        __level (int): Уровень тега.
-        __accumulated_tags (str): Накопленные теги.
+        _tag (str): Имя тега HTML-элемента, который строится.
+        _inline (bool): Определяет, должен ли HTML-элемент отображаться встроенным.
 
     Methods:
-        __init__(self, tag, *, inline = False):
-            Инициализирует новый экземпляр класса.
+        __init__(self, tag: str, *, inline: bool = False) -> None:
+            Инициализирует новый экземпляр класса HtmlBuilder.
 
-        __enter__(self) -> 'HtmlTag':
-            Входит в контекст тега.
+        __enter__(self) -> 'HtmlBuilder':
+            Входит в контекстный менеджер, открывая HTML-тег.
 
         __exit__(self, exc_type, exc_value, traceback) -> None:
-            Выходит из контекста тега.
+            Выходит из контекстного менеджера, закрывая HTML-тег.
 
         fill(self, text: str) -> None:
-            Заполняет тег текстом.
+            Заполняет HTML-элемент данным текстом.
 
-        generate_html(cls, sections: int = 0, tags: int = 0, *, inline: bool = False) -> str:
-            Генерирует HTML на основе указанных разделов и тегов.
+        @classmethod
+        def generate_html(cls, tag: str, content: str, *, inline: bool = False) -> str:
+            Генерирует полный HTML-элемент с заданным количеством секций и тегов,
+            а также с дополнительным атрибутом "inline".
+
+    Пример использования:
+        1. with HtmlBuilder('div') as builder:
+               builder.fill('Привет, мир!')
+
+        2. html = HtmlBuilder.generate_html('div', 'Hello, world!', inline=True)
+           print(html)
     """
     __level = -1
     __accumulated_tags = ""
 
-    def __init__(self, tag, *, inline=False):
-        self.tag = tag
-        self.inline = inline
+    def __init__(self, tag: str, *, inline: bool = False) -> None:
+        """
+        Инициализирует новый экземпляр класса HtmlBuilder.
+
+        Args:
+            tag (str): Имя тега HTML-элемента, который строится.
+            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
+                По умолчанию False.
+        """
+        self._tag = tag
+        self._inline = inline
 
     def __enter__(self):
-        self.__class__.__level += 1
-        type(self).__accumulated_tags += f"{'    ' * self.__level}<{self.tag}>" + ['\n', ''][self.inline]
+        """
+        Входит в контекстный менеджер, открывая HTML-тег.
+
+        Returns:
+            HtmlBuilder: Экземпляр класса HtmlBuilder.
+        """
+        type(self).__level += 1
+        type(self).__accumulated_tags += f"{'    ' * type(self).__level}<{self._tag}>" + ['\n', ''][self._inline]
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        type(self).__accumulated_tags += f"{['    ' * self.__class__.__level, ''][self.inline]}</{self.tag}>\n"
-        self.__class__.__level -= 1
+        """
+        Выходит из контекстного менеджера, закрывая HTML-тег.
+
+        Args:
+            exc_type: Тип исключения.
+            exc_value: Значение исключения.
+            traceback: Отслеживание исключения.
+        """
+        type(self).__accumulated_tags += f"{['    ' * type(self).__level, ''][self._inline]}</{self._tag}>\n"
+        type(self).__level -= 1
 
     def fill(self, text):
-        type(self).__accumulated_tags += ['    ' * (self.__class__.__level + 1), ''][self.inline] + text + ['\n', ''][
-            self.inline]
+        """
+        Заполняет HTML-элемент данным текстом.
+
+        Args:
+            text (str): Текст для заполнения HTML-элемента.
+        """
+        type(self).__accumulated_tags += ['    ' * (type(self).__level + 1), ''][self._inline] + text + ['\n', ''][
+            self._inline]
 
     @classmethod
     def generate_html(cls, sections=0, tags=0, *, inline=False):
+        """
+        Генерирует полный HTML-элемент с заданным количеством секций и тегов,
+        а также с дополнительным атрибутом "inline".
+
+        Args:
+            sections (int, optional): Количество секций HTML-элемента.
+                По умолчанию 0.
+            tags (int, optional): Количество тегов HTML-элемента.
+                По умолчанию 0.
+            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
+                По умолчанию False.
+
+        Returns:
+            str: Сгенерированный HTML-код элемента.
+        """
+
         cls.__accumulated_tags += "<!DOCTYPE html>\n"
         with cls('html'):
             with cls('head'):
