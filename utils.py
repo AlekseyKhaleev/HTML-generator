@@ -20,29 +20,24 @@ class HtmlTag:
     def fill(self, text):
         type(self).page += ['    ' * (self.__class__.level + 1), ''][self.inline] + text + ['\n', ''][self.inline]
 
-
-def generate_html(sections=0, tags=0, *, inline=False):
-    with HtmlTag('html', new=True):
-        with HtmlTag('head'):
-            pass
-        with HtmlTag('body'):
-            with HtmlTag('header', inline=True):
+    @classmethod
+    def generate_html(cls, sections=0, tags=0, *, inline=False):
+        with cls('html', new=True):
+            with cls('head'):
                 pass
-            with HtmlTag('main'):
-                for sect_num in range(sections):
-                    with HtmlTag('section'):
-                        for tag_num in range(tags):
-                            with HtmlTag('div', inline=inline) as div:
-                                div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
-            with HtmlTag("footer", inline=True):
-                pass
+            with cls('body'):
+                with cls('header', inline=True):
+                    pass
+                with cls('main'):
+                    for sect_num in range(sections):
+                        with cls('section'):
+                            for tag_num in range(tags):
+                                with cls('div', inline=inline) as div:
+                                    div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
+                with cls("footer", inline=True):
+                    pass
 
-    return HtmlTag.page
+        return cls.page
 
-class div_tag:
-    def __init__(self, tag, *, inline=False):
-        self.tag = tag
-        self.inline = inline
 
-if __name__ == '__main__':
-    print(generate_html())
+

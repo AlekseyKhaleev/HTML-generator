@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow
 
 from ui_gen import Ui_MainWindow
-from utils import generate_html
+from utils import HtmlTag
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -30,8 +30,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def generate(self):
         self.text_edit.clear()
-        self.data = generate_html(self.sections_spin.value(), self.divs_spin.value(),
-                                  inline=self.inline_check.isChecked())
+        self.data = HtmlTag.generate_html(self.sections_spin.value(), self.divs_spin.value(),
+                                          inline=self.inline_check.isChecked())
         self.set_text()
 
     def set_text(self):
