@@ -5,9 +5,8 @@ from sys import argv
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow
 
-
 from ui_gen import Ui_MainWindow
-from utils import generate_html
+from utils import HtmlBuilder
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -16,7 +15,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.data = ""
+        self.data = str()
         self.update_templates()
 
         # ---------------------------- connections----------------------------------------
@@ -29,11 +28,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.load_btn.clicked.connect(self.load_template)
         # ---------------------------------------------------------------------------------
 
-
     def generate(self):
         self.text_edit.clear()
-        self.data = generate_html(self.sections_spin.value(), self.divs_spin.value(),
-                                  inline=self.inline_check.isChecked())
+        self.data = HtmlBuilder.generate_html(self.sections_spin.value(), self.divs_spin.value(),
+                                              inline=self.inline_check.isChecked())
         self.set_text()
 
     def set_text(self):
@@ -56,7 +54,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
             output.write(self.data)
         self.saved.emit()
 
-
     def update_templates(self):
         self.templates.clear()
         self.templates.addItems(self.get_templates())
@@ -70,7 +67,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         with open(f"templates/{path}", "r") as temp:
             self.data = temp.read()
             self.set_text()
-
 
 
 def main():
