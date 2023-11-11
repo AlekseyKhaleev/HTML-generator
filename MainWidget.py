@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow, QStackedL
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from ui_gen import Ui_MainWindow
-from utils import HtmlBuilder
+from utils import SimpleBuild, BorderedBuild, HtmlBuilder
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -42,8 +42,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def generate(self):
         self.text_edit.clear()
-        self.data = HtmlBuilder.generate_html(self.sections_spin.value(), self.divs_spin.value(),
-                                              inline=self.inline_check.isChecked())
+        build_strategy = BorderedBuild if self.border_check.isChecked() else SimpleBuild
+        self.data = build_strategy.generate_html(self.sections_spin.value(), self.divs_spin.value(),
+                                                 inline=self.inline_check.isChecked())
         self.text_edit.setPlainText(self.data)
         self.set_text()
 
@@ -52,7 +53,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def set_html(self):
         self.save_template(type(self).__tmp_html_name)
-        print(self.current_dir + f"\\templates\\{type(self).__tmp_html_name}")
         self.render.load(QUrl.fromLocalFile(self.current_dir + f"\\templates\\{type(self).__tmp_html_name}"))
         self.text_lay.setCurrentIndex(1)
 
