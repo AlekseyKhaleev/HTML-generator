@@ -17,8 +17,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QHeaderView,
     QLabel, QMainWindow, QPushButton, QSizePolicy,
-    QSpinBox, QStatusBar, QTextEdit, QTreeView,
-    QWidget)
+    QSpinBox, QStatusBar, QTreeView, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -29,6 +28,8 @@ class Ui_MainWindow(object):
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.templates = QComboBox(self.centralwidget)
+        self.templates.addItem("")
+        self.templates.addItem("")
         self.templates.setObjectName(u"templates")
         self.templates.setGeometry(QRect(590, 90, 241, 22))
         self.templates.setEditable(False)
@@ -56,13 +57,6 @@ class Ui_MainWindow(object):
         self.save_btn = QPushButton(self.centralwidget)
         self.save_btn.setObjectName(u"save_btn")
         self.save_btn.setGeometry(QRect(760, 270, 71, 24))
-        self.text_edit = QTextEdit(self.centralwidget)
-        self.text_edit.setObjectName(u"text_edit")
-        self.text_edit.setGeometry(QRect(30, 60, 521, 571))
-        self.text_edit.setFocusPolicy(Qt.ClickFocus)
-        self.text_edit.setAcceptDrops(False)
-        self.text_edit.setTabChangesFocus(False)
-        self.text_edit.setLineWrapMode(QTextEdit.NoWrap)
         self.template_label = QLabel(self.centralwidget)
         self.template_label.setObjectName(u"template_label")
         self.template_label.setGeometry(QRect(590, 70, 49, 16))
@@ -82,6 +76,9 @@ class Ui_MainWindow(object):
         self.load_btn = QPushButton(self.centralwidget)
         self.load_btn.setObjectName(u"load_btn")
         self.load_btn.setGeometry(QRect(760, 120, 71, 24))
+        self.text_view = QWidget(self.centralwidget)
+        self.text_view.setObjectName(u"text_view")
+        self.text_view.setGeometry(QRect(40, 70, 511, 561))
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -94,6 +91,9 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        self.templates.setItemText(0, QCoreApplication.translate("MainWindow", u"Empty", None))
+        self.templates.setItemText(1, QCoreApplication.translate("MainWindow", u"Standard", None))
+
         self.sections_label.setText(QCoreApplication.translate("MainWindow", u"Sections", None))
         self.divs_label.setText(QCoreApplication.translate("MainWindow", u"Tags per section", None))
         self.generate_btn.setText(QCoreApplication.translate("MainWindow", u"Generate", None))

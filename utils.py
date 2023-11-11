@@ -1,3 +1,7 @@
+from functools import wraps, update_wrapper
+from abc import ABC, abstractmethod
+
+
 class HtmlBuilder:
     """
     Класс для построения HTML-тегов во вложенной структуре.
@@ -96,6 +100,7 @@ class HtmlBuilder:
         Returns:
             str: Сгенерированный HTML-код элемента.
         """
+        cls = border_divs(cls)
 
         cls.__accumulated_tags += "<!DOCTYPE html>\n"
         with cls('html'):
@@ -114,3 +119,48 @@ class HtmlBuilder:
                     pass
         result, cls.__accumulated_tags = cls.__accumulated_tags, ""
         return result
+
+
+def border_divs(cls: type[HtmlBuilder]) -> type[HtmlBuilder]:
+    old_enter = cls.__enter__
+    old_exit = cls.__exit__
+
+    @wraps(old_enter)
+    def enter_wrapper(self):
+        match self._tag:
+            case 'head':
+                res = old_enter(self)
+                with cls('style') as style:
+                    style.fill(".bordered { border: 2px solid black; }")
+                return res
+            case 'div':
+                self._tag = 'div class="bordered"'
+        return old_enter(self)
+
+    @wraps(old_exit)
+    def exit_wrapper(self, *args, **kwargs):
+        if self._tag == 'div class="bordered"':
+            self._tag = 'div'
+        old_exit(self, *args, **kwargs)
+
+    cls.__enter__ = enter_wrapper
+    cls.__exit__ = exit_wrapper
+    return cls
+
+
+class HtmlBuildStrategy(ABC):
+    __accumulated_tags = ""
+
+    @abstractmethod
+    def generate_html(self, sections=0, tags=0, *, inline=False):
+        pass
+
+
+class SimpleBuild(HtmlBuildStrategy):
+    def generate_html(self, sections=0, tags=0, *, inline=False):
+        return HtmlBuilder.generate_html(sections, tags, inline=inline)
+
+
+class BorderedBuild(HtmlBuildStrategy):
+    def generate_html(self, sections=0, tags=0, *, inline=False):
+        return HtmlBuilder.generate_html(sections, tags, inline=inline)
