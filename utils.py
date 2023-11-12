@@ -131,34 +131,40 @@ class HtmlBuilder:
 
 
 # декоратор (структурный)
-def border_divs(cls: type[HtmlBuilder]) -> type[HtmlBuilder]:
-    class HtmlBorderedBuilder(cls):
-        pass
+def border_divs_enter(depth=2, color='black'):
+    def decorator(func):
+        @wraps(func)
+        def enter_wrapper(self):
+            match self._tag:
+                case 'head':
+                    res = func(self)
+                    with self.__class__('style') as style:
+                        style.fill(f".bordered {{ border: {depth}px solid {color}; }}")
+                    return res
+                case 'div':
+                    self._tag = 'div class="bordered"'
+            return func(self)
+        return enter_wrapper
+    return decorator
 
-    old_enter = HtmlBorderedBuilder.__enter__
-    old_exit = HtmlBorderedBuilder.__exit__
 
-    @wraps(old_enter)
-    def enter_wrapper(self):
-        match self._tag:
-            case 'head':
-                res = old_enter(self)
-                with HtmlBorderedBuilder('style') as style:
-                    style.fill(".bordered { border: 2px solid black; }")
-                return res
-            case 'div':
-                self._tag = 'div class="bordered"'
-        return old_enter(self)
-
-    @wraps(old_exit)
+def border_divs_exit(func):
+    @wraps(func)
     def exit_wrapper(self, *args, **kwargs):
         if self._tag == 'div class="bordered"':
             self._tag = 'div'
-        old_exit(self, *args, **kwargs)
+        return func(self, *args, **kwargs)
+    return exit_wrapper
 
-    HtmlBorderedBuilder.__enter__ = enter_wrapper
-    HtmlBorderedBuilder.__exit__ = exit_wrapper
-    return HtmlBorderedBuilder
+
+class HtmlBorderedBuilder(HtmlBuilder):
+    @border_divs_enter()
+    def __enter__(self):
+        return super().__enter__()
+
+    @border_divs_exit
+    def __exit__(self, exc_type, exc_value, traceback):
+        return super().__exit__(exc_type, exc_value, traceback)
 
 
 class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
@@ -181,7 +187,7 @@ class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
 # стратегия (поведенческий)
 class HtmlBuildStrategy:
     def __init__(self, *, bordered):
-        self.builder = border_divs(HtmlBuilder) if bordered else HtmlBuilder
+        self.builder = HtmlBorderedBuilder if bordered else HtmlBuilder
 
     # адаптер (структурный)
     def build_page(self, obj: HtmlWidget):
