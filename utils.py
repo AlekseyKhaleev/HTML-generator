@@ -1,8 +1,12 @@
 from functools import wraps
-from abc import ABC, abstractmethod
-from copy import deepcopy
+from abc import ABC, ABCMeta, abstractmethod
+from PySide6.QtCore import QObject
 
 
+class _ABCQObjectMeta(type(QObject), ABCMeta): ...
+
+
+# строитель (порождающий)
 class HtmlBuilder:
     """
     Класс для построения HTML-тегов во вложенной структуре.
@@ -38,6 +42,11 @@ class HtmlBuilder:
     """
     _level = -1
     _accumulated_tags = ""
+
+    # легковес (структурный)
+    def __new__(cls, *args, **kwargs):
+        instances = {}
+        return instances.get(hash(args + tuple(kwargs.items())), super().__new__(cls))
 
     def __init__(self, tag: str, *, inline: bool = False) -> None:
         """
@@ -84,17 +93,57 @@ class HtmlBuilder:
         type(self)._accumulated_tags += ['    ' * (type(self)._level + 1), ''][self._inline] + text + ['\n', ''][
             self._inline]
 
+    @classmethod
+    def generate_html(cls, sections=0, tags=0, *, inline=False):
+        """
+        Генерирует полный HTML-элемент с заданным количеством секций и тегов,
+        а также с дополнительным атрибутом "inline".
 
+        Args:
+            sections (int, optional): Количество секций HTML-элемента.
+                По умолчанию 0.
+            tags (int, optional): Количество тегов HTML-элемента.
+                По умолчанию 0.
+            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
+                По умолчанию False.
+
+        Returns:
+            str: Сгенерированный HTML-код элемента.
+        """
+
+        cls._accumulated_tags += "<!DOCTYPE html>\n"
+        with cls('html'):
+            with cls('head'):
+                pass
+            with cls('body'):
+                with cls('header', inline=True):
+                    pass
+                with cls('main'):
+                    for sect_num in range(sections):
+                        with cls('section'):
+                            for tag_num in range(tags):
+                                with cls('div', inline=inline) as div:
+                                    div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
+                with cls("footer", inline=True):
+                    pass
+        result, cls._accumulated_tags = cls._accumulated_tags, ""
+        return result
+
+
+# декоратор (структурный)
 def border_divs(cls: type[HtmlBuilder]) -> type[HtmlBuilder]:
-    old_enter = cls.__enter__
-    old_exit = cls.__exit__
+    class HtmlBorderedBuilder(cls):
+        pass
+
+    old_enter = HtmlBorderedBuilder.__enter__
+    old_exit = HtmlBorderedBuilder.__exit__
 
     @wraps(old_enter)
     def enter_wrapper(self):
         match self._tag:
             case 'head':
                 res = old_enter(self)
-                with cls('style') as style:
+                with HtmlBorderedBuilder('style') as style:
                     style.fill(".bordered { border: 2px solid black; }")
                 return res
             case 'div':
@@ -107,90 +156,33 @@ def border_divs(cls: type[HtmlBuilder]) -> type[HtmlBuilder]:
             self._tag = 'div'
         old_exit(self, *args, **kwargs)
 
-    cls.__enter__ = enter_wrapper
-    cls.__exit__ = exit_wrapper
-    return cls
+    HtmlBorderedBuilder.__enter__ = enter_wrapper
+    HtmlBorderedBuilder.__exit__ = exit_wrapper
+    return HtmlBorderedBuilder
 
 
-class HtmlBuildStrategy(ABC):
+class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
+    @property
     @abstractmethod
-    def generate_html(self, sections=0, tags=0, *, inline=False):
+    def sections(self):
+        pass
+
+    @property
+    @abstractmethod
+    def divs(self):
+        pass
+
+    @property
+    @abstractmethod
+    def inline(self):
         pass
 
 
-class SimpleBuild(HtmlBuildStrategy, HtmlBuilder):
+# стратегия (поведенческий)
+class HtmlBuildStrategy:
+    def __init__(self, *, bordered):
+        self.builder = border_divs(HtmlBuilder) if bordered else HtmlBuilder
 
-    @classmethod
-    def generate_html(cls, sections=0, tags=0, *, inline=False):
-        """
-        Генерирует полный HTML-элемент с заданным количеством секций и тегов,
-        а также с дополнительным атрибутом "inline".
-
-        Args:
-            sections (int, optional): Количество секций HTML-элемента.
-                По умолчанию 0.
-            tags (int, optional): Количество тегов HTML-элемента.
-                По умолчанию 0.
-            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
-                По умолчанию False.
-
-        Returns:
-            str: Сгенерированный HTML-код элемента.
-        """
-
-        cls._accumulated_tags += "<!DOCTYPE html>\n"
-        with cls('html'):
-            with cls('head'):
-                pass
-            with cls('body'):
-                with cls('header', inline=True):
-                    pass
-                with cls('main'):
-                    for sect_num in range(sections):
-                        with cls('section'):
-                            for tag_num in range(tags):
-                                with cls('div', inline=inline) as div:
-                                    div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
-                with cls("footer", inline=True):
-                    pass
-        result, cls._accumulated_tags = cls._accumulated_tags, ""
-        return result
-
-
-@border_divs
-class BorderedBuild(HtmlBuildStrategy, HtmlBuilder):
-    @classmethod
-    def generate_html(cls, sections=0, tags=0, *, inline=False):
-        """
-        Генерирует полный HTML-элемент с заданным количеством секций и тегов,
-        а также с дополнительным атрибутом "inline".
-
-        Args:
-            sections (int, optional): Количество секций HTML-элемента.
-                По умолчанию 0.
-            tags (int, optional): Количество тегов HTML-элемента.
-                По умолчанию 0.
-            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
-                По умолчанию False.
-
-        Returns:
-            str: Сгенерированный HTML-код элемента.
-        """
-
-        cls._accumulated_tags += "<!DOCTYPE html>\n"
-        with cls('html'):
-            with cls('head'):
-                pass
-            with cls('body'):
-                with cls('header', inline=True):
-                    pass
-                with cls('main'):
-                    for sect_num in range(sections):
-                        with cls('section'):
-                            for tag_num in range(tags):
-                                with cls('div', inline=inline) as div:
-                                    div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
-                with cls("footer", inline=True):
-                    pass
-        result, cls._accumulated_tags = cls._accumulated_tags, ""
-        return result
+    # адаптер (структурный)
+    def build_page(self, obj: HtmlWidget):
+        return self.builder.generate_html(obj.sections, obj.divs, inline=obj.inline)

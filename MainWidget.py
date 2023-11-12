@@ -1,18 +1,24 @@
 import os
 from fnmatch import fnmatch
 from sys import argv
+from enum import IntEnum
 
-from PySide6.QtCore import Signal, QUrl
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow, QStackedLayout, QTextEdit
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from ui_gen import Ui_MainWindow
-from utils import SimpleBuild, BorderedBuild, HtmlBuilder
+from utils import HtmlBuildStrategy, HtmlWidget
 
 
-class MainApp(QMainWindow, Ui_MainWindow):
+class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
+    __metaclass__ = QMainWindow
     saved = Signal()
     __tmp_html_name = "TEMP.html"
+
+    class Mode(IntEnum):
+        TEXT = 0
+        HTML = 1
 
     def __init__(self):
         super().__init__()
@@ -21,18 +27,17 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.update_templates()
-        self.render = QWebEngineView()
         self.text_edit = QTextEdit()
+        self.render = QWebEngineView()
         self.text_lay = QStackedLayout()
         self.text_lay.setStackingMode(QStackedLayout.StackOne)
         self.text_lay.addWidget(self.text_edit)
         self.text_lay.addWidget(self.render)
-        self.text_lay.setCurrentIndex(0)
         self.text_view.setLayout(self.text_lay)
 
         # ---------------------------- connections----------------------------------------
-        self.text_btn.clicked.connect(self.set_text)
-        self.render_btn.clicked.connect(self.set_html)
+        self.text_btn.clicked.connect(self.show_text)
+        self.render_btn.clicked.connect(self.show_html)
         self.generate_btn.clicked.connect(self.generate)
         self.clear_btn.clicked.connect(self.text_edit.clear)
         self.save_btn.clicked.connect(self.save_modal)
@@ -40,21 +45,31 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.load_btn.clicked.connect(self.load_template)
         # ---------------------------------------------------------------------------------
 
+    @property
+    def sections(self):
+        return self.sections_spin.value()
+
+    @property
+    def divs(self):
+        return self.divs_spin.value()
+
+    @property
+    def inline(self):
+        return self.inline_check.isChecked()
+
     def generate(self):
         self.text_edit.clear()
-        build_strategy = BorderedBuild if self.border_check.isChecked() else SimpleBuild
-        self.data = build_strategy.generate_html(self.sections_spin.value(), self.divs_spin.value(),
-                                                 inline=self.inline_check.isChecked())
+        build_strategy = HtmlBuildStrategy(bordered=self.border_check.isChecked())
+        self.data = build_strategy.build_page(self)
         self.text_edit.setPlainText(self.data)
-        self.set_text()
+        self.show_text()
 
-    def set_text(self):
-        self.text_lay.setCurrentIndex(0)
+    def show_text(self):
+        self.text_lay.setCurrentIndex(self.Mode.TEXT)
 
-    def set_html(self):
-        self.save_template(type(self).__tmp_html_name)
-        self.render.load(QUrl.fromLocalFile(self.current_dir + f"\\templates\\{type(self).__tmp_html_name}"))
-        self.text_lay.setCurrentIndex(1)
+    def show_html(self):
+        self.render.setHtml(self.text_edit.toPlainText())
+        self.text_lay.setCurrentIndex(self.Mode.HTML)
 
     def save_modal(self):
         modal = QInputDialog()
@@ -82,7 +97,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         with open(f"templates/{path}", "r") as temp:
             self.data = temp.read()
             self.text_edit.setPlainText(self.data)
-            self.set_text()
+            self.show_text()
 
 
 def main():
