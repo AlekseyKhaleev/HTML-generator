@@ -6,7 +6,24 @@ from PySide6.QtCore import QObject
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
 
 
-# строитель (порождающий)
+class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
+    @property
+    @abstractmethod
+    def sections(self):
+        pass
+
+    @property
+    @abstractmethod
+    def divs(self):
+        pass
+
+    @property
+    @abstractmethod
+    def inline(self):
+        pass
+
+
+# строитель (порождающий), легковес (структурный)
 class HtmlBuilder:
     """
     Класс для построения HTML-тегов во вложенной структуре.
@@ -42,11 +59,11 @@ class HtmlBuilder:
     """
     _level = -1
     _accumulated_tags = ""
+    __instances = dict()
 
     # легковес (структурный)
     def __new__(cls, *args, **kwargs):
-        instances = {}
-        return instances.get(hash(args + tuple(kwargs.items())), super().__new__(cls))
+        return cls.__instances.setdefault(hash(args + tuple(kwargs.items())), super().__new__(cls))
 
     def __init__(self, tag: str, *, inline: bool = False) -> None:
         """
@@ -111,7 +128,7 @@ class HtmlBuilder:
             str: Сгенерированный HTML-код элемента.
         """
 
-        cls._accumulated_tags += "<!DOCTYPE html>\n"
+        cls._accumulated_tags = "<!DOCTYPE html>\n"
         with cls('html'):
             with cls('head'):
                 pass
@@ -144,7 +161,9 @@ def border_divs_enter(depth=2, color='black'):
                 case 'div':
                     self._tag = 'div class="bordered"'
             return func(self)
+
         return enter_wrapper
+
     return decorator
 
 
@@ -154,6 +173,7 @@ def border_divs_exit(func):
         if self._tag == 'div class="bordered"':
             self._tag = 'div'
         return func(self, *args, **kwargs)
+
     return exit_wrapper
 
 
@@ -165,23 +185,6 @@ class HtmlBorderedBuilder(HtmlBuilder):
     @border_divs_exit
     def __exit__(self, exc_type, exc_value, traceback):
         return super().__exit__(exc_type, exc_value, traceback)
-
-
-class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
-    @property
-    @abstractmethod
-    def sections(self):
-        pass
-
-    @property
-    @abstractmethod
-    def divs(self):
-        pass
-
-    @property
-    @abstractmethod
-    def inline(self):
-        pass
 
 
 # стратегия (поведенческий)

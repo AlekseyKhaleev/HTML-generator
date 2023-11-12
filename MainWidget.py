@@ -12,7 +12,6 @@ from utils import HtmlBuildStrategy, HtmlWidget
 
 
 class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
-    __metaclass__ = QMainWindow
     saved = Signal()
     __tmp_html_name = "TEMP.html"
 
