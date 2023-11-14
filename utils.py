@@ -46,10 +46,12 @@ class State(IntEnum):
 
 
 class HtmlTag(ABC):
+
     def __init__(self, tag_name: str):
         self._tag_iter = self._get_tag_iter(tag_name)
         self._states = cycle(State)
         self.state = self._states.__next__()
+        self.next_calls_number = 0
 
     def __iter__(self):
         return self
@@ -60,6 +62,10 @@ class HtmlTag(ABC):
     def __str__(self):
         return self.__next__()
 
+    @property
+    def max_calls_number(self):
+        return 100
+
     @abstractmethod
     def _get_tag_iter(self, tag_name: str) -> Iterator[str]:
         pass
@@ -68,6 +74,10 @@ class HtmlTag(ABC):
 class SimpleTag(HtmlTag):
 
     def __next__(self):
+        if self.next_calls_number == self.max_calls_number:
+            self.next_calls_number = 0
+            raise StopIteration
+        self.next_calls_number += 1
         return next(self._tag_iter)
 
     def _get_tag_iter(self, tag_name: str) -> Iterator:
