@@ -13,6 +13,14 @@ class HtmlTag(ABC):
     def __repr__(self):
         return f"{type(self).__name__}({self.__tag_name})"
 
+    def __hash__(self):
+        return hash(self.__tag_name)
+
+    def __eq__(self, other):
+        if not isinstance(other, HtmlTag):
+            return NotImplemented
+        return self.__tag_name == other.__tag_name
+
     @abstractmethod
     def _get_tag_gen(self, tag_name: str) -> Iterator: ...
 
@@ -44,8 +52,4 @@ class DoubleTag(HtmlTag):
 #         return cls.__instance
 #
 #
-div = DoubleTag("div")
-print(div)
-# img = SingleTag("img")
-# for _ in range(3):
-#     print(img.tag)
+

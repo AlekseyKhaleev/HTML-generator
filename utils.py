@@ -44,7 +44,6 @@ class TreeBuilder(ABC):
     def __init__(self, *, tree: dict | None = None):
         self.tree = tree if tree is not None else dict()
         self.level = 0
-        self.tree = dict()
         self.call_stack = deque()
         self.res = str()
 
@@ -59,6 +58,12 @@ class TreeBuilder(ABC):
 
 
 class TagBuilder(TreeBuilder):
+
+    def add_inplace(self, tag: HtmlTag, key: DoubleTag) -> None:
+        self.tree[key].append(tag)
+
+    def add_nested(self, tag: HtmlTag, key: DoubleTag) -> None:
+        self.tree[key].append({tag: []})
 
     def open_tag(self, tag: HtmlTag, *, inplace: bool = True):
         self.res += "\t" * self.level + tag.tag + "\n"
@@ -82,33 +87,29 @@ class TagBuilder(TreeBuilder):
 class HtmlDirector:
     def __init__(self):
         self.base_tree = {
-            "!DOCTYPE html": {},
-            "html": {
-                "head": {},
-                "body": {
-                    "header": {},
-                    "main": {},
-                    "footer": {}
+            SingleTag("!DOCTYPE html"): {},
+            DoubleTag("html"): {
+                DoubleTag("head"): {},
+                DoubleTag("body"): {
+                    DoubleTag("header"): {},
+                    DoubleTag("main"): [],
+                    DoubleTag("footer"): {}
                 }
             }
         }
-        self.main_builder = TagBuilder(tree=self.base_tree["html"]["body"]["main"])
+        self.main_builder = TagBuilder(tree=self.base_tree[DoubleTag("html")][DoubleTag("body")])
 
     def build_tree(self, *, sections=1, divs=1):
         for _ in range(sections):
+            self.main_builder.add_nested(DoubleTag("section"), DoubleTag("main"))
+        for section in self.main_builder.tree[DoubleTag("main")]:
             for _ in range(divs):
-                self.main_builder.tree.
-        self.main_builder.open_tag(DoubleTag("section"))
-        self.main_builder.open_tag(DoubleTag("div"))
-        self.main_builder.add_value("Section 1, Div 1")
-        self.main_builder.close_tag()
-        self.main_builder.open_tag(DoubleTag("div"))
-        self.main_builder.add_value("Section 1, Div 2")
-        self.main_builder.close_tag()
-        self.main_builder.close_tag()
-        self.main_builder.open_tag(DoubleTag("section"))
-        self.main_builder.open_tag(DoubleTag("div"))
-        self.main_builder.add_value("Section 2, Div 1")
-        self.main_builder.close_tag()
-        self.main_builder.open_tag(DoubleTag("div"))
-        self.main_builder.add_value("Section 2, Div 2")
+                section[DoubleTag("section")].append(DoubleTag("div"))
+
+    def result(self):
+        return self.base_tree
+
+
+tb = HtmlDirector()
+tb.build_tree(sections=2, divs=2)
+print(tb.result())
