@@ -5,11 +5,11 @@ from typing import Iterator, Self
 from collections import deque
 
 from PySide6.QtCore import QObject
+from constants import STATE, MAX_CALLS, TAB
+from html_tags import HtmlTag, DoubleTag, SingleTag
 
-qobj_meta = type(QObject)
 
-
-class _ABCQObjectMeta(qobj_meta, ABCMeta): ...
+class _ABCQObjectMeta(type(QObject), ABCMeta): ...
 
 
 class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
@@ -40,117 +40,75 @@ class HtmlBuildStrategy:
     #     return self.builder.generate_html(obj.sections, obj.divs, inline=obj.inline)
 
 
-class State(IntEnum):
-    CLOSED = 0
-    OPEN = 1
-
-
-class HtmlTag(ABC):
-
-    def __init__(self, tag_name: str):
-        self._tag_iter = self._get_tag_iter(tag_name)
-        self._states = cycle(State)
-        self.state = self._states.__next__()
-        self.next_calls_number = 0
-
-    def __iter__(self):
-        return self
+class TreeBuilder(ABC):
+    def __init__(self, *, tree: dict | None = None):
+        self.tree = tree if tree is not None else dict()
+        self.level = 0
+        self.tree = dict()
+        self.call_stack = deque()
+        self.res = str()
 
     @abstractmethod
-    def __next__(self): ...
-
-    def __str__(self):
-        return self.__next__()
-
-    @property
-    def max_calls_number(self):
-        return 100
+    def open_tag(self, tag: HtmlTag, *, inplace: bool = True): ...
 
     @abstractmethod
-    def _get_tag_iter(self, tag_name: str) -> Iterator[str]:
-        pass
+    def close_tag(self): ...
+
+    @abstractmethod
+    def add_value(self, value: str): ...
 
 
-class SimpleTag(HtmlTag):
+class TagBuilder(TreeBuilder):
 
-    def __next__(self):
-        if self.next_calls_number == self.max_calls_number:
-            self.next_calls_number = 0
-            raise StopIteration
-        self.next_calls_number += 1
-        return next(self._tag_iter)
+    def open_tag(self, tag: HtmlTag, *, inplace: bool = True):
+        self.res += "\t" * self.level + tag.tag + "\n"
+        self.call_stack.append(tag)
+        self.level += 1
 
-    def _get_tag_iter(self, tag_name: str) -> Iterator:
-        return repeat(f"<{tag_name}>")
+    def close_tag(self):
+        self.level = 0 if self.level - 1 < 0 else self.level - 1
+        last_tag = self.call_stack.pop()
+        if isinstance(last_tag, DoubleTag):
+            self.res += "\t" * self.level + last_tag.tag + "\n"
+
+    def add_value(self, value: str):
+        self.res += "\t" * self.level + value + "\n"
+
+    def close_all(self):
+        while self.call_stack:
+            self.close_tag()
 
 
-class DoubleTag(HtmlTag):
-    def __next__(self):
-        self.state = next(self._states)
-        return next(self._tag_iter)
-
-    def _get_tag_iter(self, tag_name) -> Iterator:
-        return cycle((f"<{tag_name}>", f"</{tag_name}>"))
-
-
-class AbstractBuilder(ABC):
+class HtmlDirector:
     def __init__(self):
-        self.stack = deque()
+        self.base_tree = {
+            "!DOCTYPE html": {},
+            "html": {
+                "head": {},
+                "body": {
+                    "header": {},
+                    "main": {},
+                    "footer": {}
+                }
+            }
+        }
+        self.main_builder = TagBuilder(tree=self.base_tree["html"]["body"]["main"])
 
-    @abstractmethod
-    def add(self, tag: HtmlTag):
-        pass
-
-
-class TagBuilder(AbstractBuilder):
-    pass
-
-
-class BlockBuilder(AbstractBuilder):
-    pass
-
-
-class PageBuilder(AbstractBuilder):
-    def __init__(self):
-        super().__init__()
-        self.res = str(SimpleTag("!DOCTYPE html"))
-        self.indent_level = 0
-
-    def add_tag(self, tag: HtmlTag, *, deep: bool = False):
-        if not deep:
-            if self.stack:
-                self.res += f"\n{'    ' * self.indent_level}{str(self.stack.pop())}"
-            self.res += f"\n{'    ' * self.indent_level}{str(tag)}"
-            self.stack.append(tag)
-        else:
-            self.indent_level += 1
-            self.res += f"\n{'    ' * self.indent_level}{str(tag)}"
-            self.stack.append(tag)
-
-    def add_content(self, content: str):
-        if not self.stack:
-            raise ValueError("Stack is empty, cannot add string-content")
-        self.res += f"\n{'    ' * self.indent_level}{content}"
-
-    def get_result(self):
-        while self.stack:
-            self.res += f"\n{'    ' * self.indent_level}{str(self.stack.pop())}"
-            self.indent_level -= 1
-        return self.res
-
-
-# def build_base(self):
-
-builder = PageBuilder()
-
-builder.add_tag(DoubleTag("html"))
-builder.add_tag(DoubleTag("head"), deep=True)
-builder.add_tag(DoubleTag("body"))
-builder.add_tag(DoubleTag("section"), deep=True)
-builder.add_tag(DoubleTag("div"), deep=True)
-builder.add_tag(DoubleTag("h1"), deep=True)
-builder.add_content("This is h1 content")
-builder.add_tag(DoubleTag("div"))
-builder.add_tag(DoubleTag("section"))
-builder.add_tag(DoubleTag("div"), deep=True)
-print(builder.get_result())
+    def build_tree(self, *, sections=1, divs=1):
+        for _ in range(sections):
+            for _ in range(divs):
+                self.main_builder.tree.
+        self.main_builder.open_tag(DoubleTag("section"))
+        self.main_builder.open_tag(DoubleTag("div"))
+        self.main_builder.add_value("Section 1, Div 1")
+        self.main_builder.close_tag()
+        self.main_builder.open_tag(DoubleTag("div"))
+        self.main_builder.add_value("Section 1, Div 2")
+        self.main_builder.close_tag()
+        self.main_builder.close_tag()
+        self.main_builder.open_tag(DoubleTag("section"))
+        self.main_builder.open_tag(DoubleTag("div"))
+        self.main_builder.add_value("Section 2, Div 1")
+        self.main_builder.close_tag()
+        self.main_builder.open_tag(DoubleTag("div"))
+        self.main_builder.add_value("Section 2, Div 2")
