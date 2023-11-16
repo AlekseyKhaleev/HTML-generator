@@ -10,6 +10,23 @@ from html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, HTML_SINGLES, HT
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
 
 
+class UniqueStack:
+    def __init__(self):
+        self.stack = deque()
+        self.images = set()
+
+    def add(self, value):
+        if id(value) not in self.images:
+            self.stack.append(value)
+            self.images.add(id(value))
+        return self
+
+    def pop(self):
+        last = self.stack.pop()
+        self.images.remove(id(last))
+        return last
+
+
 class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
     @property
     @abstractmethod
@@ -57,7 +74,7 @@ class Node(Strategy):
 
 class Leaf(Strategy):
     @staticmethod
-    def add(node: list[Any], value: str) -> list[Any]:
+    def add(node: list[Any], value: str | HtmlTag) -> list[Any]:
         node.append(value)
         return node
 
@@ -67,7 +84,7 @@ class HtmlBuilder:
         self.tree = dict()
         self.tree.setdefault("root", [])
         self.branch_ptr = self.tree["root"]
-        self.node_stack = deque()
+        self.node_stack = UniqueStack()
 
     @staticmethod
     def create_content(value: str) -> HtmlTag | str:
@@ -80,18 +97,24 @@ class HtmlBuilder:
         else:
             return value
 
-    def fill(self, value: str, *, strategy: type[Strategy], backward: bool = False) -> None:
+    def fill(self, value: str, *, strategy: type[Strategy]) -> None:
+
         content = self.create_content(value)
-        if backward:
-            if self.node_stack:
-                self.branch_ptr = self.node_stack.pop()
         self.branch_ptr = strategy.add(self.branch_ptr, content)
+
+
+    @property
+    def to_previous(self):
+        if self.node_stack:
+            self.branch_ptr = self.node_stack.pop()
+        return self
+
 
 class HtmlDirector:
     def __init__(self):
         self.builder = HtmlBuilder()
 
-    def build_html(self):
+    def build_tree(self) -> None:
         self.builder.fill("<!DOCTYPE html>", strategy=Leaf)
         self.builder.fill("html", strategy=Node)
         self.builder.fill("head", strategy=Leaf)
@@ -101,7 +124,36 @@ class HtmlDirector:
         self.builder.fill("section", strategy=Node)
         self.builder.fill("div", strategy=Node)
         self.builder.fill("section1 div1 message", strategy=Leaf)
-        self.builder.fill("div", strategy=Node, backward=True)
+        self.builder.to_previous.fill("div", strategy=Node)
         self.builder.fill("section1 div2 message", strategy=Leaf)
-        self.builder.
-        return self.builder.tree
+
+    def get_html(self) -> str:
+        res = ""
+
+        def tree_traversal(node: dict, level=-1):
+            nonlocal res
+            for tag, childs in node.items():
+                if isinstance(tag, HtmlTag):
+                    res += "\t" * level + tag.tag + '\n'
+                for child in childs:
+                    if isinstance(child, dict):
+                        tree_traversal(child, level + 1)
+                    else:
+                        match child:
+                            case SingleTag():
+                                res += "\t" * (level + 1) + child.tag + '\n'
+                            case DoubleTag():
+                                res += "\t" * (level + 1) + child.tag + child.tag + '\n'
+                            case str():
+                                res += "\t" * (level + 1) + child + '\n'
+                if isinstance(tag, DoubleTag):
+                    res += "\t" * level + tag.tag + '\n'
+
+        tree_traversal(self.builder.tree)
+        return res
+
+
+if __name__ == "__main__":
+    director = HtmlDirector()
+    director.build_tree()
+    print(director.get_html())

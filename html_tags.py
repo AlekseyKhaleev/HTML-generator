@@ -57,9 +57,7 @@ class DoubleTag(HtmlTag):
 
 # singleton
 class UniqueTag(DoubleTag):
-    __instance = None
+    __instances = dict()
 
-    def __new__(cls, *args, **kwargs):
-        if cls.__instance is None:
-            cls.__instance = super().__new__(cls)
-        return cls.__instance
+    def __new__(cls, tag_name: str, *args, **kwargs):
+        return cls.__instances.setdefault(tag_name, super().__new__(cls))
