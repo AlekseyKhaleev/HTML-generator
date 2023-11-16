@@ -6,7 +6,7 @@ from collections import deque
 
 from PySide6.QtCore import QObject
 from constants import STATE, MAX_CALLS, TAB
-from html_tags import HtmlTag, DoubleTag, SingleTag
+from html_tags import HtmlTag, DoubleTag, SingleTag, Singleton, create_tag_type
 
 
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
@@ -109,7 +109,9 @@ class HtmlDirector:
     def result(self):
         return self.base_tree
 
+div = create_tag_type("div")
 
-tb = HtmlDirector()
-tb.build_tree(sections=2, divs=2)
-print(tb.result())
+tag = div()
+
+
+print(div.tag)
