@@ -4,7 +4,7 @@ from collections import deque
 
 from PySide6.QtCore import QObject
 
-from html_base.html_tags import HtmlTag, DoubleTag, SingleTag, Singleton
+from html_base.html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag
 from html_base.constants import HTML_SINGLES, HTML_DOUBLES, HTML_SINGLETONS
 
 
@@ -39,7 +39,7 @@ class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
 #         return self.builder.generate_html(obj.sections, obj.divs, inline=obj.inline)
 
 
-class Builder(ABC, Singleton):
+class Builder(ABC):
     def add(self, value: str):
         content = self.create_content(value)
 
@@ -51,6 +51,11 @@ class Builder(ABC, Singleton):
         elif value in HTML_DOUBLES:
             return DoubleTag(value)
         elif value in HTML_SINGLETONS:
-            return type("HtmlSingleton", (DoubleTag, Singleton), {})(value)
+            return UniqueTag(value)
         else:
             return value
+
+
+t1 = Builder.create_content("body")
+t2 = Builder.create_content("body")
+print(id(t1) == id(t2), id(t1), id(t2), sep='\n')
