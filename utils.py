@@ -65,9 +65,9 @@ class Node(Strategy):
     @staticmethod
     def add(node: list[Any], value: str | HtmlTag) -> list[Any]:
         if isinstance(value, DoubleTag):
-            new_node = {value: []}
+            new_node = [value]
             node.append(new_node)
-            return new_node[value]
+            return new_node
         else:
             return Leaf.add(node, value)
 
@@ -81,9 +81,8 @@ class Leaf(Strategy):
 
 class HtmlBuilder:
     def __init__(self):
-        self.tree = dict()
-        self.tree.setdefault("root", [])
-        self.branch_ptr = self.tree["root"]
+        self.tree = list()
+        self.branch_ptr = self.tree
         self.node_stack = UniqueStack()
 
     @staticmethod
@@ -98,10 +97,9 @@ class HtmlBuilder:
             return value
 
     def fill(self, value: str, *, strategy: type[Strategy]) -> None:
-
+        self.node_stack.add(self.branch_ptr)
         content = self.create_content(value)
         self.branch_ptr = strategy.add(self.branch_ptr, content)
-
 
     @property
     def to_previous(self):
@@ -130,24 +128,23 @@ class HtmlDirector:
     def get_html(self) -> str:
         res = ""
 
-        def tree_traversal(node: dict, level=-1):
+        def tree_traversal(node: list[Any], level=-1):
             nonlocal res
-            for tag, childs in node.items():
-                if isinstance(tag, HtmlTag):
-                    res += "\t" * level + tag.tag + '\n'
-                for child in childs:
-                    if isinstance(child, dict):
+            first = node[0]
+            if isinstance(first, HtmlTag):
+                res += "\t" * level + first.tag + '\n'
+            for child in node[1:]:
+                match child:
+                    case SingleTag():
+                        res += "\t" * (level + 1) + child.tag + '\n'
+                    case DoubleTag():
+                        res += "\t" * (level + 1) + child.tag + child.tag + '\n'
+                    case str():
+                        res += "\t" * (level + 1) + child + '\n'
+                    case list():
                         tree_traversal(child, level + 1)
-                    else:
-                        match child:
-                            case SingleTag():
-                                res += "\t" * (level + 1) + child.tag + '\n'
-                            case DoubleTag():
-                                res += "\t" * (level + 1) + child.tag + child.tag + '\n'
-                            case str():
-                                res += "\t" * (level + 1) + child + '\n'
-                if isinstance(tag, DoubleTag):
-                    res += "\t" * level + tag.tag + '\n'
+            if isinstance(first, DoubleTag):
+                res += "\t" * level + first.tag + '\n'
 
         tree_traversal(self.builder.tree)
         return res
