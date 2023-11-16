@@ -1,11 +1,8 @@
 from abc import ABC, ABCMeta, abstractmethod
-from dataclasses import dataclass, field
-from collections import deque
 
 from PySide6.QtCore import QObject
 
-from html_base.html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag
-from html_base.constants import HTML_SINGLES, HTML_DOUBLES, HTML_SINGLETONS
+from html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, HTML_SINGLES, HTML_DOUBLES, HTML_UNIQUES
 
 
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
@@ -50,7 +47,7 @@ class Builder(ABC):
             return SingleTag(value)
         elif value in HTML_DOUBLES:
             return DoubleTag(value)
-        elif value in HTML_SINGLETONS:
+        elif value in HTML_UNIQUES:
             return UniqueTag(value)
         else:
             return value
