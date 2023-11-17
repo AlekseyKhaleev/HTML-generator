@@ -4,7 +4,8 @@ from typing import Any, Union
 
 from PySide6.QtCore import QObject
 
-from html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, TagContent, HTML_SINGLES, HTML_DOUBLES, HTML_UNIQUES
+from source.html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, TagContent, HTML_SINGLES, HTML_DOUBLES, \
+    HTML_UNIQUES
 
 
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
@@ -15,13 +16,13 @@ class UniqueStack:
         self.stack = deque()
         self.images = set()
 
-    def add(self, value):
+    def add(self, value: Any) -> "UniqueStack":
         if id(value) not in self.images:
             self.stack.append(value)
             self.images.add(id(value))
         return self
 
-    def pop(self):
+    def pop(self) -> Any:
         last = self.stack.pop()
         self.images.remove(id(last))
         return last
@@ -30,30 +31,27 @@ class UniqueStack:
 class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
     @property
     @abstractmethod
-    def sections(self):
-        pass
+    def sections(self) -> int: ...
 
     @property
     @abstractmethod
-    def divs(self):
-        pass
+    def divs(self) -> int: ...
 
     @property
     @abstractmethod
-    def inline(self):
-        pass
+    def inline(self) -> bool: ...
 
 
 class HtmlAdapter:
     """ This class is used to implement the "adapter" pattern"""
 
-    def __init__(self, *, bordered=False):
+    def __init__(self, *, bordered: bool = False) -> None:
         self.director = HtmlDirector()
 
-    def build_page(self, obj: HtmlWidget):
+    def build_page(self, obj: HtmlWidget) -> None:
         self.director.build_tree(sections_num=obj.sections, divs_num=obj.divs, inline=obj.inline)
 
-    def get_html(self):
+    def get_html(self) -> str:
         return self.director.get_html()
 
 
@@ -151,8 +149,8 @@ class HtmlDirector:
         res = ""
         space_tab = "    "
 
-        def tree_traversal(node: list[Union[HtmlTag, Any]], level=-1) -> None:
-            """ It's a function that traverses the html tree recursively to write result to nonlocal res variable """
+        def tree_traversal(node: list[Union[HtmlTag, Any]], level: int = -1) -> None:
+            """ It's a function that traverses the html tree recursively to write result to nonlocal "res" variable """
             nonlocal res
             first_tag = node[0]
             res += space_tab * level + first_tag.tag + '\n'
@@ -169,9 +167,3 @@ class HtmlDirector:
 
         tree_traversal(self.builder.tree)
         return res
-
-
-if __name__ == "__main__":
-    director = HtmlDirector()
-    director.build_tree(sections_num=2, divs_num=2)
-    print(director.get_html())
