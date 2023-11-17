@@ -1,16 +1,15 @@
 import os
 from enum import IntEnum
 from fnmatch import fnmatch
-from sys import argv
 
 
 from PySide6.QtCore import Signal
 from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow, QStackedLayout, QTextEdit
+from PySide6.QtWidgets import QInputDialog, QMainWindow, QStackedLayout, QTextEdit
 
 
 from designed_ui.designed_interface import Ui_MainWindow
-from utils import HtmlAdapter, HtmlWidget
+from source.utils import HtmlAdapter, HtmlWidget
 
 
 class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
@@ -34,7 +33,6 @@ class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
         self.text_lay.addWidget(self.text_edit)
         self.text_lay.addWidget(self.html_render)
         self.text_view.setLayout(self.text_lay)
-
         # ---------------------------- connections----------------------------------------
         self.text_btn.clicked.connect(self.show_text)
         self.render_btn.clicked.connect(self.show_html)
@@ -99,14 +97,3 @@ class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
             self.data = temp.read()
             self.text_edit.setPlainText(self.data)
             self.show_text()
-
-
-def main():
-    app = QApplication(argv)
-    window = MainApp()
-    window.show()
-    app.exec()
-
-
-if __name__ == '__main__':
-    main()
