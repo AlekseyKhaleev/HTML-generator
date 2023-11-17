@@ -55,6 +55,7 @@ class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
 #         return self.builder.generate_html(obj.sections, obj.divs, inline=obj.inline)
 
 class Strategy(ABC):
+    """ This class is a head of hierarchy, that provide to implement a part of the strategy pattern"""
     @staticmethod
     @abstractmethod
     def add(node: list[Any], value: HtmlTag) -> list[Any]:
@@ -80,12 +81,18 @@ class Leaf(Strategy):
 
 
 class HtmlBuilder:
-    def __init__(self):
+    """ This class is used to implement those patterns:
+        - factory method
+        - builder
+        - strategy (a part of)
+        - state
+    """
+    def __init__(self) -> None:
         self.tree: list[Any] = list()
         self.branch_ptr: list[Any] = self.tree
         self.node_stack: UniqueStack = UniqueStack()
 
-    def fill(self, value: str, *, strategy: type[Strategy]) -> None:
+    def add(self, value: str, *, strategy: type[Strategy]) -> None:
         self.node_stack.add(self.branch_ptr)
         content = self.create_content(value)
         self.branch_ptr = strategy.add(self.branch_ptr, content)
@@ -101,11 +108,16 @@ class HtmlBuilder:
         else:
             return TagContent(value)
 
-    @property
     def to_previous(self) -> "HtmlBuilder":
-        for _ in range(2):
-            if self.node_stack:
-                self.branch_ptr = self.node_stack.pop()
+        """ Implements "state" pattern - we can return to previous state using node callstack"""
+        if self.node_stack:
+            last_branch = self.node_stack.pop()
+            if last_branch is self.branch_ptr:
+                self.to_previous()              # recursive call
+            else:
+                self.branch_ptr = last_branch
+            if not self.node_stack:
+                self.node_stack.add(self.branch_ptr)
         return self
 
 
@@ -114,22 +126,25 @@ class HtmlDirector:
         self.builder = HtmlBuilder()
 
     def build_tree(self) -> None:
-        self.builder.fill("<!DOCTYPE html>", strategy=Leaf)
-        self.builder.fill("html", strategy=Node)
-        self.builder.fill("head", strategy=Leaf)
-        self.builder.fill("body", strategy=Node)
-        self.builder.fill("header", strategy=Leaf)
-        self.builder.fill("main", strategy=Node)
-        self.builder.fill("section", strategy=Node)
-        self.builder.fill("div", strategy=Node)
-        self.builder.fill("section1 div1 message", strategy=Leaf)
-        self.builder.to_previous.fill("div", strategy=Node)
-        self.builder.fill("section1 div2 message", strategy=Leaf)
+        self.builder.add("<!DOCTYPE html>", strategy=Leaf)
+        self.builder.add("html", strategy=Node)
+        self.builder.add("head", strategy=Leaf)
+        self.builder.add("body", strategy=Node)
+        self.builder.add("header", strategy=Leaf)
+        self.builder.add("main", strategy=Node)
+        for i in range(2):
+            self.builder.add("section", strategy=Node)
+            for j in range(2):
+                self.builder.add("div", strategy=Node)
+                self.builder.add(f"section-{i} div-{j} message", strategy=Leaf)
+                self.builder.to_previous()
+            self.builder.to_previous()
 
     def get_html(self) -> str:
         res = ""
 
         def tree_traversal(node: list[Union[HtmlTag, ...]], level=-1) -> None:
+            """ It's a function that traverses the tag tree recursively to write result to nonlocal res variable """
             nonlocal res
             first_tag = node[0]
             res += "\t" * level + first_tag.tag + '\n'
@@ -140,7 +155,7 @@ class HtmlDirector:
                     case DoubleTag():
                         res += "\t" * (level + 1) + child.tag + child.tag + '\n'
                     case list():
-                        tree_traversal(child, level + 1)
+                        tree_traversal(child, level + 1)  # recursive case
             if isinstance(first_tag, DoubleTag):
                 res += "\t" * level + first_tag.tag + '\n'
 
@@ -152,4 +167,3 @@ if __name__ == "__main__":
     director = HtmlDirector()
     director.build_tree()
     print(director.get_html())
-    print(f"{getsizeof(deque(range(10 ** 8)))} | {getsizeof(list(range(10 ** 8)))}")

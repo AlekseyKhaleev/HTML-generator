@@ -25,14 +25,6 @@ class HtmlTag(ABC):
     def __repr__(self):
         return f"{type(self).__name__}({self.__tag_name})"
 
-    def __hash__(self):
-        return hash(self.__tag_name)
-
-    def __eq__(self, other):
-        if not isinstance(other, HtmlTag):
-            return NotImplemented
-        return self.__tag_name == other.__tag_name
-
     @abstractmethod
     def _get_tag_gen(self, tag_name: str) -> Iterator: ...
 
@@ -57,6 +49,7 @@ class DoubleTag(HtmlTag):
 
 # singleton
 class UniqueTag(DoubleTag):
+    """ This class is used to implement "flyweight" pattern """
     __instances: dict[str, HtmlTag] = dict()
 
     def __new__(cls, tag_name: str, *args, **kwargs):
