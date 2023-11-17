@@ -1,19 +1,20 @@
 import os
+from enum import IntEnum
 from fnmatch import fnmatch
 from sys import argv
-from enum import IntEnum
+
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow, QStackedLayout, QTextEdit
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow, QStackedLayout, QTextEdit
 
-from ui_gen import Ui_MainWindow
+
+from designed_ui.designed_interface import Ui_MainWindow
 from utils import HtmlAdapter, HtmlWidget
 
 
 class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
     saved = Signal()
-    __tmp_html_name = "TEMP.html"
 
     class Mode(IntEnum):
         TEXT = 0
@@ -27,11 +28,11 @@ class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
 
         self.update_templates()
         self.text_edit = QTextEdit()
-        self.render = QWebEngineView()
+        self.html_render = QWebEngineView()
         self.text_lay = QStackedLayout()
         self.text_lay.setStackingMode(QStackedLayout.StackOne)
         self.text_lay.addWidget(self.text_edit)
-        self.text_lay.addWidget(self.render)
+        self.text_lay.addWidget(self.html_render)
         self.text_view.setLayout(self.text_lay)
 
         # ---------------------------- connections----------------------------------------
@@ -45,33 +46,33 @@ class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
         # ---------------------------------------------------------------------------------
 
     @property
-    def sections(self):
+    def sections(self) -> int:
         return self.sections_spin.value()
 
     @property
-    def divs(self):
+    def divs(self) -> int:
         return self.divs_spin.value()
 
     @property
-    def inline(self):
+    def inline(self) -> bool:
         return self.inline_check.isChecked()
 
-    def generate(self):
+    def generate(self) -> None:
         self.text_edit.clear()
-        html_agent = HtmlAdapter(bordered=self.border_check.isChecked())
+        html_agent = HtmlAdapter(bordered=self.bordered_check.isChecked())
         html_agent.build_page(self)
         self.data = html_agent.get_html()
         self.text_edit.setPlainText(self.data)
         self.show_text()
 
-    def show_text(self):
+    def show_text(self) -> None:
         self.text_lay.setCurrentIndex(self.Mode.TEXT)
 
-    def show_html(self):
-        self.render.setHtml(self.text_edit.toPlainText())
+    def show_html(self) -> None:
+        self.html_render.setHtml(self.text_edit.toPlainText())
         self.text_lay.setCurrentIndex(self.Mode.HTML)
 
-    def save_modal(self):
+    def save_modal(self) -> None:
         modal = QInputDialog()
         modal.setWindowTitle("HTML template saving")
         modal.setLabelText("Enter filename:")
@@ -79,22 +80,22 @@ class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
         if modal.accepted:
             self.save_template(modal.textValue())
 
-    def save_template(self, filename):
+    def save_template(self, filename) -> None:
         with open(f"templates/{filename.rstrip('.html')}.html", "w") as output:
             output.write(self.data)
         self.saved.emit()
 
-    def update_templates(self):
+    def update_templates(self) -> None:
         self.templates.clear()
         self.templates.addItems(self.get_templates())
 
     @staticmethod
-    def get_templates():
+    def get_templates() -> tuple[str, ...]:
         return tuple(entry for entry in os.listdir("templates") if fnmatch(entry, "*.html"))
 
-    def load_template(self):
-        path = str(self.templates.currentText())
-        with open(f"templates/{path}", "r") as temp:
+    def load_template(self) -> None:
+        template_name = str(self.templates.currentText())
+        with open(f"templates/{template_name}", "r") as temp:
             self.data = temp.read()
             self.text_edit.setPlainText(self.data)
             self.show_text()

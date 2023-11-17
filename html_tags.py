@@ -44,7 +44,7 @@ class DoubleTag(HtmlTag):
         return cycle((f"<{self._tag_name}{' ' * bool(self._tag_specs)}{self._tag_specs}>", f"</{self._tag_name}>"))
 
 
-# singleton
+# flyweight
 class UniqueTag(DoubleTag):
     """ This class is used to implement "flyweight" pattern """
     __instances: dict[str, HtmlTag] = dict()

@@ -30,18 +30,15 @@ class UniqueStack:
 class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
     @property
     @abstractmethod
-    def sections(self):
-        pass
+    def sections(self) -> int: ...
 
     @property
     @abstractmethod
-    def divs(self):
-        pass
+    def divs(self) -> int: ...
 
     @property
     @abstractmethod
-    def inline(self):
-        pass
+    def inline(self) -> bool: ...
 
 
 class HtmlAdapter:
@@ -152,7 +149,7 @@ class HtmlDirector:
         space_tab = "    "
 
         def tree_traversal(node: list[Union[HtmlTag, Any]], level=-1) -> None:
-            """ It's a function that traverses the html tree recursively to write result to nonlocal res variable """
+            """ It's a function that traverses the html tree recursively to write result to nonlocal "res" variable """
             nonlocal res
             first_tag = node[0]
             res += space_tab * level + first_tag.tag + '\n'
