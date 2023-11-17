@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow, QStackedL
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from ui_gen import Ui_MainWindow
-from utils import HtmlBuildStrategy, HtmlWidget
+from utils import HtmlAdapter, HtmlWidget
 
 
 class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
@@ -58,8 +58,9 @@ class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
 
     def generate(self):
         self.text_edit.clear()
-        build_strategy = HtmlBuildStrategy(bordered=self.border_check.isChecked())
-        self.data = build_strategy.build_page(self)
+        html_agent = HtmlAdapter(bordered=self.border_check.isChecked())
+        html_agent.build_page(self)
+        self.data = html_agent.get_html()
         self.text_edit.setPlainText(self.data)
         self.show_text()
 
