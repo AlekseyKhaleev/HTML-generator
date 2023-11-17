@@ -57,7 +57,13 @@ class DoubleTag(HtmlTag):
 
 # singleton
 class UniqueTag(DoubleTag):
-    __instances = dict()
+    __instances: dict[str, HtmlTag] = dict()
 
     def __new__(cls, tag_name: str, *args, **kwargs):
         return cls.__instances.setdefault(tag_name, super().__new__(cls))
+
+
+class TagContent(SingleTag):
+
+    def _get_tag_gen(self, tag_name: str) -> Iterator:
+        return repeat(tag_name)

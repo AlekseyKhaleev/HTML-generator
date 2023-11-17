@@ -1,10 +1,10 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import deque
-from typing import Any
-
+from typing import Any, Union
+from sys import getsizeof
 from PySide6.QtCore import QObject
 
-from html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, HTML_SINGLES, HTML_DOUBLES, HTML_UNIQUES
+from html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, TagContent, HTML_SINGLES, HTML_DOUBLES, HTML_UNIQUES
 
 
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
@@ -57,13 +57,13 @@ class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
 class Strategy(ABC):
     @staticmethod
     @abstractmethod
-    def add(node: list[Any], value: str) -> None:
+    def add(node: list[Any], value: HtmlTag) -> list[Any]:
         pass
 
 
 class Node(Strategy):
     @staticmethod
-    def add(node: list[Any], value: str | HtmlTag) -> list[Any]:
+    def add(node: list[Any], value: HtmlTag) -> list[Any]:
         if isinstance(value, DoubleTag):
             new_node = [value]
             node.append(new_node)
@@ -74,19 +74,24 @@ class Node(Strategy):
 
 class Leaf(Strategy):
     @staticmethod
-    def add(node: list[Any], value: str | HtmlTag) -> list[Any]:
+    def add(node: list[Any], value: HtmlTag) -> list[Any]:
         node.append(value)
         return node
 
 
 class HtmlBuilder:
     def __init__(self):
-        self.tree = list()
-        self.branch_ptr = self.tree
-        self.node_stack = UniqueStack()
+        self.tree: list[Any] = list()
+        self.branch_ptr: list[Any] = self.tree
+        self.node_stack: UniqueStack = UniqueStack()
+
+    def fill(self, value: str, *, strategy: type[Strategy]) -> None:
+        self.node_stack.add(self.branch_ptr)
+        content = self.create_content(value)
+        self.branch_ptr = strategy.add(self.branch_ptr, content)
 
     @staticmethod
-    def create_content(value: str) -> HtmlTag | str:
+    def create_content(value: str) -> HtmlTag:
         if value in HTML_SINGLES:
             return SingleTag(value)
         elif value in HTML_DOUBLES:
@@ -94,17 +99,13 @@ class HtmlBuilder:
         elif value in HTML_UNIQUES:
             return UniqueTag(value)
         else:
-            return value
-
-    def fill(self, value: str, *, strategy: type[Strategy]) -> None:
-        self.node_stack.add(self.branch_ptr)
-        content = self.create_content(value)
-        self.branch_ptr = strategy.add(self.branch_ptr, content)
+            return TagContent(value)
 
     @property
-    def to_previous(self):
-        if self.node_stack:
-            self.branch_ptr = self.node_stack.pop()
+    def to_previous(self) -> "HtmlBuilder":
+        for _ in range(2):
+            if self.node_stack:
+                self.branch_ptr = self.node_stack.pop()
         return self
 
 
@@ -128,23 +129,20 @@ class HtmlDirector:
     def get_html(self) -> str:
         res = ""
 
-        def tree_traversal(node: list[Any], level=-1):
+        def tree_traversal(node: list[Union[HtmlTag, ...]], level=-1) -> None:
             nonlocal res
-            first = node[0]
-            if isinstance(first, HtmlTag):
-                res += "\t" * level + first.tag + '\n'
+            first_tag = node[0]
+            res += "\t" * level + first_tag.tag + '\n'
             for child in node[1:]:
                 match child:
                     case SingleTag():
                         res += "\t" * (level + 1) + child.tag + '\n'
                     case DoubleTag():
                         res += "\t" * (level + 1) + child.tag + child.tag + '\n'
-                    case str():
-                        res += "\t" * (level + 1) + child + '\n'
                     case list():
                         tree_traversal(child, level + 1)
-            if isinstance(first, DoubleTag):
-                res += "\t" * level + first.tag + '\n'
+            if isinstance(first_tag, DoubleTag):
+                res += "\t" * level + first_tag.tag + '\n'
 
         tree_traversal(self.builder.tree)
         return res
@@ -154,3 +152,4 @@ if __name__ == "__main__":
     director = HtmlDirector()
     director.build_tree()
     print(director.get_html())
+    print(f"{getsizeof(deque(range(10 ** 8)))} | {getsizeof(list(range(10 ** 8)))}")
