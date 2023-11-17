@@ -12,7 +12,7 @@ from designed_ui.designed_interface import Ui_MainWindow
 from source.utils import HtmlAdapter, HtmlWidget
 
 
-class MainApp(QMainWindow, Ui_MainWindow, HtmlWidget):
+class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
     saved = Signal()
 
     class Mode(IntEnum):
