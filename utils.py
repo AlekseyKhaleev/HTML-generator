@@ -1,196 +1,177 @@
-from functools import wraps
-from abc import ABC, abstractmethod
-from copy import deepcopy
+from abc import ABC, ABCMeta, abstractmethod
+from collections import deque
+from typing import Any, Union
+
+from PySide6.QtCore import QObject
+
+from html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, TagContent, HTML_SINGLES, HTML_DOUBLES, HTML_UNIQUES
 
 
-class HtmlBuilder:
-    """
-    Класс для построения HTML-тегов во вложенной структуре.
+class _ABCQObjectMeta(type(QObject), ABCMeta): ...
 
-    Attributes:
-        _tag (str): Имя тега HTML-элемента, который строится.
-        _inline (bool): Определяет, должен ли HTML-элемент отображаться встроенным.
 
-    Methods:
-        __init__(self, tag: str, *, inline: bool = False) -> None:
-            Инициализирует новый экземпляр класса HtmlBuilder.
+class UniqueStack:
+    def __init__(self):
+        self.stack = deque()
+        self.images = set()
 
-        __enter__(self) -> 'HtmlBuilder':
-            Входит в контекстный менеджер, открывая HTML-тег.
-
-        __exit__(self, exc_type, exc_value, traceback) -> None:
-            Выходит из контекстного менеджера, закрывая HTML-тег.
-
-        fill(self, text: str) -> None:
-            Заполняет HTML-элемент данным текстом.
-
-        @classmethod
-        def generate_html(cls, tag: str, content: str, *, inline: bool = False) -> str:
-            Генерирует полный HTML-элемент с заданным количеством секций и тегов,
-            а также с дополнительным атрибутом "inline".
-
-    Пример использования:
-        1. with HtmlBuilder('div') as builder:
-               builder.fill('Привет, мир!')
-
-        2. html = HtmlBuilder.generate_html('div', 'Hello, world!', inline=True)
-           print(html)
-    """
-    _level = -1
-    _accumulated_tags = ""
-
-    def __init__(self, tag: str, *, inline: bool = False) -> None:
-        """
-        Инициализирует новый экземпляр класса HtmlBuilder.
-
-        Args:
-            tag (str): Имя тега HTML-элемента, который строится.
-            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
-                По умолчанию False.
-        """
-        self._tag = tag
-        self._inline = inline
-
-    def __enter__(self):
-        """
-        Входит в контекстный менеджер, открывая HTML-тег.
-
-        Returns:
-            HtmlBuilder: Экземпляр класса HtmlBuilder.
-        """
-        type(self)._level += 1
-        type(self)._accumulated_tags += f"{'    ' * type(self)._level}<{self._tag}>" + ['\n', ''][self._inline]
+    def add(self, value):
+        if id(value) not in self.images:
+            self.stack.append(value)
+            self.images.add(id(value))
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        """
-        Выходит из контекстного менеджера, закрывая HTML-тег.
-
-        Args:
-            exc_type: Тип исключения.
-            exc_value: Значение исключения.
-            traceback: Отслеживание исключения.
-        """
-        type(self)._accumulated_tags += f"{['    ' * type(self)._level, ''][self._inline]}</{self._tag}>\n"
-        type(self)._level -= 1
-
-    def fill(self, text):
-        """
-        Заполняет HTML-элемент данным текстом.
-
-        Args:
-            text (str): Текст для заполнения HTML-элемента.
-        """
-        type(self)._accumulated_tags += ['    ' * (type(self)._level + 1), ''][self._inline] + text + ['\n', ''][
-            self._inline]
+    def pop(self):
+        last = self.stack.pop()
+        self.images.remove(id(last))
+        return last
 
 
-def border_divs(cls: type[HtmlBuilder]) -> type[HtmlBuilder]:
-    old_enter = cls.__enter__
-    old_exit = cls.__exit__
-
-    @wraps(old_enter)
-    def enter_wrapper(self):
-        match self._tag:
-            case 'head':
-                res = old_enter(self)
-                with cls('style') as style:
-                    style.fill(".bordered { border: 2px solid black; }")
-                return res
-            case 'div':
-                self._tag = 'div class="bordered"'
-        return old_enter(self)
-
-    @wraps(old_exit)
-    def exit_wrapper(self, *args, **kwargs):
-        if self._tag == 'div class="bordered"':
-            self._tag = 'div'
-        old_exit(self, *args, **kwargs)
-
-    cls.__enter__ = enter_wrapper
-    cls.__exit__ = exit_wrapper
-    return cls
-
-
-class HtmlBuildStrategy(ABC):
+class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
+    @property
     @abstractmethod
-    def generate_html(self, sections=0, tags=0, *, inline=False):
+    def sections(self):
+        pass
+
+    @property
+    @abstractmethod
+    def divs(self):
+        pass
+
+    @property
+    @abstractmethod
+    def inline(self):
         pass
 
 
-class SimpleBuild(HtmlBuildStrategy, HtmlBuilder):
+class HtmlAdapter:
+    """ This class is used to implement the "adapter" pattern"""
 
-    @classmethod
-    def generate_html(cls, sections=0, tags=0, *, inline=False):
-        """
-        Генерирует полный HTML-элемент с заданным количеством секций и тегов,
-        а также с дополнительным атрибутом "inline".
+    def __init__(self, *, bordered=False):
+        self.director = HtmlDirector()
 
-        Args:
-            sections (int, optional): Количество секций HTML-элемента.
-                По умолчанию 0.
-            tags (int, optional): Количество тегов HTML-элемента.
-                По умолчанию 0.
-            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
-                По умолчанию False.
+    def build_page(self, obj: HtmlWidget):
+        self.director.build_tree(sections_num=obj.sections, divs_num=obj.divs, inline=obj.inline)
 
-        Returns:
-            str: Сгенерированный HTML-код элемента.
-        """
-
-        cls._accumulated_tags += "<!DOCTYPE html>\n"
-        with cls('html'):
-            with cls('head'):
-                pass
-            with cls('body'):
-                with cls('header', inline=True):
-                    pass
-                with cls('main'):
-                    for sect_num in range(sections):
-                        with cls('section'):
-                            for tag_num in range(tags):
-                                with cls('div', inline=inline) as div:
-                                    div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
-                with cls("footer", inline=True):
-                    pass
-        result, cls._accumulated_tags = cls._accumulated_tags, ""
-        return result
+    def get_html(self):
+        return self.director.get_html()
 
 
-@border_divs
-class BorderedBuild(HtmlBuildStrategy, HtmlBuilder):
-    @classmethod
-    def generate_html(cls, sections=0, tags=0, *, inline=False):
-        """
-        Генерирует полный HTML-элемент с заданным количеством секций и тегов,
-        а также с дополнительным атрибутом "inline".
+class Strategy(ABC):
+    """ This class is a head of hierarchy, that provide to implement a part of the strategy pattern"""
 
-        Args:
-            sections (int, optional): Количество секций HTML-элемента.
-                По умолчанию 0.
-            tags (int, optional): Количество тегов HTML-элемента.
-                По умолчанию 0.
-            inline (bool, optional): Определяет, должен ли HTML-элемент отображаться встроенным.
-                По умолчанию False.
+    @staticmethod
+    @abstractmethod
+    def add(node: list[Any], value: HtmlTag) -> list[Any]:
+        pass
 
-        Returns:
-            str: Сгенерированный HTML-код элемента.
-        """
 
-        cls._accumulated_tags += "<!DOCTYPE html>\n"
-        with cls('html'):
-            with cls('head'):
-                pass
-            with cls('body'):
-                with cls('header', inline=True):
-                    pass
-                with cls('main'):
-                    for sect_num in range(sections):
-                        with cls('section'):
-                            for tag_num in range(tags):
-                                with cls('div', inline=inline) as div:
-                                    div.fill(f"Section {sect_num + 1}, Div {tag_num + 1}")
-                with cls("footer", inline=True):
-                    pass
-        result, cls._accumulated_tags = cls._accumulated_tags, ""
-        return result
+class Node(Strategy):
+    @staticmethod
+    def add(node: list[Any], value: HtmlTag) -> list[Any]:
+        if isinstance(value, DoubleTag):
+            new_node = [value]
+            node.append(new_node)
+            return new_node
+        else:
+            return Leaf.add(node, value)
+
+
+class Leaf(Strategy):
+    @staticmethod
+    def add(node: list[Any], value: HtmlTag) -> list[Any]:
+        node.append(value)
+        return node
+
+
+class HtmlBuilder:
+    """ This class is used to implement those patterns:
+        - factory method
+        - builder
+        - strategy (a part of)
+        - state
+    """
+
+    def __init__(self) -> None:
+        self.tree: list[Any] = list()
+        self.branch_ptr: list[Any] = self.tree
+        self.node_stack: UniqueStack = UniqueStack()
+
+    def add(self, value: str, *, strategy: type[Strategy], specs: str = "") -> None:
+        """ Implements a part of "strategy" pattern"""
+        self.node_stack.add(self.branch_ptr)
+        content = self.create_content(value, specs)  # a part of "factory method" pattern
+        self.branch_ptr = strategy.add(self.branch_ptr, content)
+
+    @staticmethod
+    def create_content(value: str, specs: str) -> HtmlTag:
+        """ Implements "factory method" pattern"""
+        if value in HTML_SINGLES:
+            return SingleTag(value, tag_specs=specs)
+        elif value in HTML_DOUBLES:
+            return DoubleTag(value, tag_specs=specs)
+        elif value in HTML_UNIQUES:
+            return UniqueTag(value, tag_specs=specs)
+        else:
+            return TagContent(value)
+
+    def to_previous(self) -> "HtmlBuilder":
+        """ Implements "state" pattern - we can return to previous state using node callstack"""
+        if self.node_stack:
+            last_branch = self.node_stack.pop()
+            if last_branch is self.branch_ptr:
+                self.to_previous()  # recursive call
+            else:
+                self.branch_ptr = last_branch
+            if not self.node_stack:
+                self.node_stack.add(self.branch_ptr)
+        return self
+
+
+class HtmlDirector:
+    def __init__(self):
+        self.builder = HtmlBuilder()
+
+    def build_tree(self, *, sections_num, divs_num, inline=False) -> None:
+        self.builder.add("!DOCTYPE", strategy=Leaf, specs="html")
+        self.builder.add("html", strategy=Node)
+        self.builder.add("head", strategy=Leaf)
+        self.builder.add("body", strategy=Node)
+        self.builder.add("header", strategy=Leaf)
+        self.builder.add("main", strategy=Node)
+        for s_num in range(1, sections_num + 1):
+            self.builder.add("section", strategy=Node)
+            for d_num in range(1, divs_num + 1):
+                self.builder.add("div", strategy=Node)
+                self.builder.add(f"section-{s_num} div-{d_num} message", strategy=Leaf)
+                self.builder.to_previous()
+            self.builder.to_previous()
+
+    def get_html(self) -> str:
+        res = ""
+        space_tab = "    "
+
+        def tree_traversal(node: list[Union[HtmlTag, Any]], level=-1) -> None:
+            """ It's a function that traverses the html tree recursively to write result to nonlocal res variable """
+            nonlocal res
+            first_tag = node[0]
+            res += space_tab * level + first_tag.tag + '\n'
+            for child in node[1:]:
+                match child:
+                    case SingleTag():
+                        res += space_tab * (level + 1) + child.tag + '\n'
+                    case DoubleTag():
+                        res += space_tab * (level + 1) + child.tag + child.tag + '\n'
+                    case list():
+                        tree_traversal(child, level + 1)  # recursive case
+            if isinstance(first_tag, DoubleTag):
+                res += space_tab * level + first_tag.tag + '\n'
+
+        tree_traversal(self.builder.tree)
+        return res
+
+
+if __name__ == "__main__":
+    director = HtmlDirector()
+    director.build_tree(sections_num=2, divs_num=2)
+    print(director.get_html())
