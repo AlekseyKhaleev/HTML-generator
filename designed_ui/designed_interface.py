@@ -25,6 +25,9 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(877, 682)
         MainWindow.setAcceptDrops(True)
+        icon = QIcon()
+        icon.addFile(u"../../../Downloads/logo.png", QSize(), QIcon.Normal, QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.templates = QComboBox(self.centralwidget)
@@ -111,7 +114,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"HTML-generator", None))
         self.templates.setItemText(0, QCoreApplication.translate("MainWindow", u"Empty", None))
         self.templates.setItemText(1, QCoreApplication.translate("MainWindow", u"Standard", None))
 
