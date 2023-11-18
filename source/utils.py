@@ -1,28 +1,12 @@
 from abc import ABC, ABCMeta, abstractmethod
 from collections import deque
+from dataclasses import dataclass
 from typing import Any, Union
 
 from PySide6.QtCore import QObject
 
 from source.html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, TagContent, HTML_SINGLES, HTML_DOUBLES, \
     HTML_UNIQUES
-
-
-class UniqueStack:
-    def __init__(self):
-        self.stack = deque()
-        self.images = set()
-
-    def add(self, value: Any) -> "UniqueStack":
-        if id(value) not in self.images:
-            self.stack.append(value)
-            self.images.add(id(value))
-        return self
-
-    def pop(self) -> Any:
-        last = self.stack.pop()
-        self.images.remove(id(last))
-        return last
 
 
 class _ABCQObjectMeta(type(QObject), ABCMeta): ...
@@ -39,20 +23,52 @@ class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
 
     @property
     @abstractmethod
-    def inline(self) -> bool: ...
+    def bordered(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def headers(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def color(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def alignment(self) -> str: ...
+
+
+@dataclass
+class Style:
+    name: str
+    body: str
 
 
 class HtmlAdapter:
     """ This class is used to implement the "adapter" pattern"""
 
-    def __init__(self, *, bordered: bool = False) -> None:
+    def __init__(self) -> None:
         self.director = HtmlDirector()
 
     def build_page(self, obj: HtmlWidget) -> None:
-        self.director.build_tree(sections_num=obj.sections, divs_num=obj.divs, inline=obj.inline)
+        style = self.create_style(color=obj.color, alignment=obj.alignment, bordered=obj.bordered)
+        self.director.build_tree(sections_num=obj.sections, divs_num=obj.divs, div_style=style,
+                                 headers=obj.headers)
 
     def get_html(self) -> str:
         return self.director.get_html()
+
+    @staticmethod
+    def create_style(*, color: str, alignment: str, bordered: bool, name: str = "container") -> "Style":
+        style = f".{name} {{"
+        if color:
+            style += f"color: {color}; "
+        if alignment:
+            style += f"text-align: {alignment}; "
+        if bordered:
+            style += "border: 1px solid black; "
+        style += "}"
+        return Style(name, style)
 
 
 class Strategy(ABC):
@@ -93,11 +109,11 @@ class HtmlBuilder:
     def __init__(self) -> None:
         self.tree: list[Any] = list()
         self.branch_ptr: list[Any] = self.tree
-        self.node_stack: UniqueStack = UniqueStack()
+        self.node_stack: deque = deque()
 
     def add(self, value: str, *, strategy: type[Strategy], specs: str = "") -> None:
         """ Implements a part of "strategy" pattern"""
-        self.node_stack.add(self.branch_ptr)
+        self.node_stack.append(self.branch_ptr)
         content = self.create_content(value, specs)  # a part of "factory method" pattern
         self.branch_ptr = strategy.add(self.branch_ptr, content)
 
@@ -122,28 +138,40 @@ class HtmlBuilder:
             else:
                 self.branch_ptr = last_branch
             if not self.node_stack:
-                self.node_stack.add(self.branch_ptr)
+                self.node_stack.append(self.branch_ptr)
         return self
+
+    def get_result(self):
+        return self.tree
 
 
 class HtmlDirector:
-    def __init__(self):
-        self.builder = HtmlBuilder()
+    def __init__(self) -> None:
+        self.html_builder = HtmlBuilder()
 
-    def build_tree(self, *, sections_num, divs_num, inline=False) -> None:
-        self.builder.add("!DOCTYPE", strategy=Leaf, specs="html")
-        self.builder.add("html", strategy=Node)
-        self.builder.add("head", strategy=Leaf)
-        self.builder.add("body", strategy=Node)
-        self.builder.add("header", strategy=Leaf)
-        self.builder.add("main", strategy=Node)
+    def build_tree(self, *, sections_num: int, divs_num: int, div_style: Style, headers: bool) -> None:
+        self.html_builder.add("!DOCTYPE", strategy=Leaf, specs="html")
+        self.html_builder.add("html", strategy=Node)
+        self.html_builder.add("head", strategy=Node)
+        self.html_builder.add("style", strategy=Node, specs='type="text/css"')
+        self.html_builder.add(div_style.body, strategy=Leaf)
+        self.html_builder.to_previous().to_previous()
+        self.html_builder.add("body", strategy=Node)
+        self.html_builder.add("header", strategy=Leaf)
+        self.html_builder.add("main", strategy=Node)
         for s_num in range(1, sections_num + 1):
-            self.builder.add("section", strategy=Node)
+            self.html_builder.add("section", strategy=Node)
             for d_num in range(1, divs_num + 1):
-                self.builder.add("div", strategy=Node)
-                self.builder.add(f"section-{s_num} div-{d_num} message", strategy=Leaf)
-                self.builder.to_previous()
-            self.builder.to_previous()
+                self.html_builder.add("div", strategy=Node, specs=f"class={div_style.name}")
+                if headers:
+                    h_level = d_num if d_num <= 6 else 6
+                    self.html_builder.add(f"h{h_level}", strategy=Node)
+                    self.html_builder.add(f"section-{s_num} div-{d_num} message", strategy=Leaf)
+                    self.html_builder.to_previous()
+                else:
+                    self.html_builder.add(f"section-{s_num} div-{d_num} message", strategy=Leaf)
+                self.html_builder.to_previous()
+            self.html_builder.to_previous()
 
     def get_html(self) -> str:
         res = ""
@@ -165,5 +193,5 @@ class HtmlDirector:
             if isinstance(first_tag, DoubleTag):
                 res += space_tab * level + first_tag.tag + '\n'
 
-        tree_traversal(self.builder.tree)
+        tree_traversal(self.html_builder.tree)
         return res

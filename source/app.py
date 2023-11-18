@@ -2,11 +2,9 @@ import os
 from enum import IntEnum
 from fnmatch import fnmatch
 
-
-from PySide6.QtCore import Signal, QCoreApplication
+from PySide6.QtCore import Signal
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QInputDialog, QMainWindow, QStackedLayout, QTextEdit
-
 
 from designed_ui.designed_interface import Ui_MainWindow
 from source.utils import HtmlAdapter, HtmlWidget
@@ -40,6 +38,7 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
         self.render_btn.clicked.connect(self.show_html)
         self.generate_btn.clicked.connect(self.generate)
         self.clear_btn.clicked.connect(self.text_edit.clear)
+        self.clear_btn.clicked.connect(self.show_text)
         self.save_btn.clicked.connect(self.save_modal)
         self.load_btn.clicked.connect(self.load_template)
         self.temp_saved.connect(self.update_templates)
@@ -56,11 +55,23 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
         return self.divs_spin.value()
 
     @property
-    def inline(self) -> bool:
-        return self.inline_check.isChecked()
+    def bordered(self) -> bool:
+        return self.bordered_check.isChecked()
+
+    @property
+    def color(self) -> str:
+        return self.text_color_spin.currentText()
+
+    @property
+    def alignment(self) -> str:
+        return self.alignment_spin.currentText()
+
+    @property
+    def headers(self) -> bool:
+        return self.headers_check.isChecked()
 
     def generate(self) -> None:
-        html_agent = HtmlAdapter(bordered=self.bordered_check.isChecked())
+        html_agent = HtmlAdapter()
         html_agent.build_page(self)
         html_text = html_agent.get_html()
         self.text_edit.setPlainText(html_text)
