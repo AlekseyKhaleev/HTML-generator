@@ -8,9 +8,6 @@ from source.html_tags import HtmlTag, DoubleTag, SingleTag, UniqueTag, TagConten
     HTML_UNIQUES
 
 
-class _ABCQObjectMeta(type(QObject), ABCMeta): ...
-
-
 class UniqueStack:
     def __init__(self):
         self.stack = deque()
@@ -26,6 +23,9 @@ class UniqueStack:
         last = self.stack.pop()
         self.images.remove(id(last))
         return last
+
+
+class _ABCQObjectMeta(type(QObject), ABCMeta): ...
 
 
 class HtmlWidget(QObject, ABC, metaclass=_ABCQObjectMeta):
