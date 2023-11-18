@@ -172,6 +172,8 @@ class HtmlDirector:
                     self.html_builder.add(f"section-{s_num} div-{d_num} message", strategy=Leaf)
                 self.html_builder.to_previous()
             self.html_builder.to_previous()
+        self.html_builder.to_previous()
+        self.html_builder.add("footer", strategy=Leaf)
 
     def get_html(self) -> str:
         res = ""
