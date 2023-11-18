@@ -7,7 +7,7 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QInputDialog, QMainWindow, QStackedLayout, QTextEdit
 
 from designed_ui.designed_interface import Ui_MainWindow
-from source.utils import HtmlAdapter, HtmlWidget
+from source.html_utils import HtmlAdapter, HtmlWidget
 
 
 class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
