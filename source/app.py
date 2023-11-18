@@ -2,18 +2,18 @@ import os
 from enum import IntEnum
 from fnmatch import fnmatch
 
-
 from PySide6.QtCore import Signal
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QInputDialog, QMainWindow, QStackedLayout, QTextEdit
 
-
 from designed_ui.designed_interface import Ui_MainWindow
-from source.utils import HtmlAdapter, HtmlWidget
+from source.html_utils import HtmlAdapter, HtmlWidget
 
 
 class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
-    saved = Signal()
+    temp_saved = Signal()
+    temp_loaded = Signal()
+    temp_generated = Signal()
 
     class Mode(IntEnum):
         TEXT = 0
@@ -22,12 +22,12 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.data = str()
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.update_templates()
         self.text_edit = QTextEdit()
         self.html_render = QWebEngineView()
+        self.html_render.reload()
         self.text_lay = QStackedLayout()
         self.text_lay.setStackingMode(QStackedLayout.StackOne)
         self.text_lay.addWidget(self.text_edit)
@@ -38,9 +38,12 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
         self.render_btn.clicked.connect(self.show_html)
         self.generate_btn.clicked.connect(self.generate)
         self.clear_btn.clicked.connect(self.text_edit.clear)
+        self.clear_btn.clicked.connect(self.show_text)
         self.save_btn.clicked.connect(self.save_modal)
-        self.saved.connect(self.update_templates)
         self.load_btn.clicked.connect(self.load_template)
+        self.temp_saved.connect(self.update_templates)
+        self.temp_loaded.connect(self.show_text)
+        self.temp_generated.connect(self.show_text)
         # ---------------------------------------------------------------------------------
 
     @property
@@ -52,16 +55,27 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
         return self.divs_spin.value()
 
     @property
-    def inline(self) -> bool:
-        return self.inline_check.isChecked()
+    def bordered(self) -> bool:
+        return self.bordered_check.isChecked()
+
+    @property
+    def color(self) -> str:
+        return self.text_color_spin.currentText()
+
+    @property
+    def alignment(self) -> str:
+        return self.alignment_spin.currentText()
+
+    @property
+    def headers(self) -> bool:
+        return self.headers_check.isChecked()
 
     def generate(self) -> None:
-        self.text_edit.clear()
-        html_agent = HtmlAdapter(bordered=self.bordered_check.isChecked())
+        html_agent = HtmlAdapter()
         html_agent.build_page(self)
-        self.data = html_agent.get_html()
-        self.text_edit.setPlainText(self.data)
-        self.show_text()
+        html_text = html_agent.get_html()
+        self.text_edit.setPlainText(html_text)
+        self.temp_generated.emit()
 
     def show_text(self) -> None:
         self.text_lay.setCurrentIndex(self.Mode.TEXT)
@@ -80,8 +94,8 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
 
     def save_template(self, filename) -> None:
         with open(f"templates/{filename.rstrip('.html')}.html", "w") as output:
-            output.write(self.data)
-        self.saved.emit()
+            output.write(self.text_edit.toPlainText())
+        self.temp_saved.emit()
 
     def update_templates(self) -> None:
         self.templates.clear()
@@ -94,6 +108,6 @@ class MainWindow(QMainWindow, Ui_MainWindow, HtmlWidget):
     def load_template(self) -> None:
         template_name = str(self.templates.currentText())
         with open(f"templates/{template_name}", "r") as temp:
-            self.data = temp.read()
-            self.text_edit.setPlainText(self.data)
-            self.show_text()
+            template_text = temp.read()
+            self.text_edit.setPlainText(template_text)
+            self.temp_loaded.emit()

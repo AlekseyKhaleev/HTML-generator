@@ -164,19 +164,6 @@
      <string>Clear</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="inline_check">
-    <property name="geometry">
-     <rect>
-      <x>580</x>
-      <y>300</y>
-      <width>91</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>inline</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="load_btn">
     <property name="geometry">
      <rect>
@@ -230,17 +217,17 @@
     </property>
     <item>
      <property name="text">
-      <string>Left</string>
+      <string>left</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Center</string>
+      <string>center</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Right</string>
+      <string>right</string>
      </property>
     </item>
    </widget>
@@ -254,7 +241,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Alignment</string>
+     <string>Text alignment</string>
     </property>
    </widget>
    <widget class="QComboBox" name="text_color_spin">
@@ -271,27 +258,27 @@
     </property>
     <item>
      <property name="text">
-      <string>Black</string>
+      <string>black</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Red</string>
+      <string>red</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Green</string>
+      <string>green</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Yellow</string>
+      <string>yellow</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Blue</string>
+      <string>blue</string>
      </property>
     </item>
    </widget>
@@ -328,7 +315,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>with headers</string>
+     <string>add headers</string>
     </property>
    </widget>
   </widget>
