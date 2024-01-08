@@ -1,0 +1,87 @@
+@startuml
+
+class MainWindow {
+    - current_dir
+    + temp_saved: Signal()
+    + temp_loaded: Signal()
+    + temp_generated: Signal()
+    + sections: int
+    + divs: int
+    + bordered: bool
+    + color: str
+    + alignment: str
+    + headers: bool
+    + generate(): None
+    + show_text(): None
+    + show_html(): None
+    + save_modal(): None
+    + save_template(filename): None
+    + update_templates(): None
+    + get_templates(): tuple[str, ...]
+    + load_template(): None
+}
+
+class Ui_MainWindow {
+    <<interface>>
+}
+
+class HtmlWidget {
+    <<interface>>
+}
+
+class HtmlAdapter {
+    + build_page(): None
+    + get_html(): str
+}
+
+class QTextEdit {
+}
+
+class QWebEngineView {
+}
+
+class QStackedLayout {
+    + setStackingMode(mode): None
+    + addWidget(widget): None
+    + setCurrentIndex(index): None
+}
+
+class QInputDialog {
+    + setWindowTitle(title): None
+    + setLabelText(text): None
+    + exec(): None
+    + accepted: bool
+    + textValue(): str
+}
+
+class QMainWindow {
+}
+
+class Signal {
+}
+
+enum Mode {
+    TEXT = 0
+    HTML = 1
+}
+
+MainWindow "1" --> QMainWindow
+MainWindow "1" --> Ui_MainWindow
+MainWindow "1" --> HtmlWidget
+MainWindow "1" --> QTextEdit
+MainWindow "1" --> QWebEngineView
+MainWindow "1" --> QStackedLayout
+MainWindow "1" --> QInputDialog
+MainWindow "1" --> Signal
+MainWindow "1" --> Mode
+MainWindow *-- HtmlAdapter
+MainWindow *-- os
+MainWindow *-- IntEnum
+MainWindow *-- fnmatch
+MainWindow *-- PySide6.QtCore
+MainWindow *-- PySide6.QtWidgets
+
+QStackedLayout *-- QTextEdit
+QStackedLayout *-- QWebEngineView
+
+@enduml

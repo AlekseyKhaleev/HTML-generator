@@ -1,0 +1,31 @@
+@startuml
+
+abstract class HtmlTag {
+  +__init__(tag_name: str, tag_specs: str = "")
+  +__repr__() : str
+  +_get_tag_gen() : Iterator
+  +tag() : str
+}
+
+class SingleTag {
+  +_get_tag_gen() : Iterator
+}
+
+class DoubleTag {
+  +_get_tag_gen() : Iterator
+}
+
+class UniqueTag {
+  +__new__(tag_name: str, *args, **kwargs)
+}
+
+class TagContent {
+  +_get_tag_gen() : Iterator
+}
+
+HtmlTag <|-- SingleTag
+HtmlTag <|-- DoubleTag
+DoubleTag <|-- UniqueTag
+SingleTag <|-- TagContent
+
+@enduml
