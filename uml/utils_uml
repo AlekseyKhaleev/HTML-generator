@@ -8,13 +8,13 @@ abstract class ABC {
   ...
 }
 
-class HtmlWidget {
-  +sections() : int
-  +divs() : int
-  +bordered() : bool
-  +headers() : bool
-  +color() : str
-  +alignment() : str
+abstract class HtmlWidget {
+  {abstract}sections() : int
+  {abstract}divs() : int
+  {abstract}bordered() : bool
+  {abstract}headers() : bool
+  {abstract}color() : str
+  {abstract}alignment() : str
 }
 
 class Style {
@@ -23,14 +23,14 @@ class Style {
 }
 
 class HtmlAdapter {
-  +__init__()
+  +director: HtmlDirector
   +build_page(obj: HtmlWidget)
   +get_html() : str
   +create_style(color: str, alignment: str, bordered: bool, name: str = "container") : Style
 }
 
 abstract class Strategy {
-  +add(node: list[Any], value: HtmlTag) : list[Any]
+  {abstract}add(node: list[Any], value: HtmlTag) : list[Any]
 }
 
 class Node {
@@ -42,7 +42,9 @@ class Leaf {
 }
 
 class HtmlBuilder {
-  +__init__()
+  +tree: list
+  +branch_ptr: list
+  +node_stack: deque
   +add(value: str, strategy: type[Strategy], specs: str = "")
   +create_content(value: str, specs: str) : HtmlTag
   +to_previous() : HtmlBuilder
@@ -50,19 +52,51 @@ class HtmlBuilder {
 }
 
 class HtmlDirector {
-  +__init__()
+  +html_builder: HtmlBuilder
   +build_tree(sections_num: int, divs_num: int, div_style: Style, headers: bool)
   +get_html() : str
+}
+
+abstract class HtmlTag{
+  +tag: str
+  #_tag_name: str
+  #_tag_specs: str
+  #_tag_iter: Iterator
+  {abstract}#_get_tag_gen() : Iterator
+  -tag(): str
+
+}
+
+class SingleTag {
+  #_get_tag_gen() : Iterator
+}
+
+class DoubleTag {
+  #_get_tag_gen() : Iterator
+}
+
+class UniqueTag {
+  -__instances : dict
+  -__new__(tag_name: str, *args, **kwargs)
+}
+
+class TagContent {
+  #_get_tag_gen() : Iterator
 }
 
 QObject <|-- HtmlWidget
 ABC <|-- HtmlWidget
 HtmlWidget --> Style
-HtmlAdapter --> HtmlDirector
+HtmlAdapter *-- HtmlDirector
+HtmlAdapter o-- HtmlWidget
 Strategy <|-- Node
 Strategy <|-- Leaf
-HtmlBuilder --> Strategy
+HtmlBuilder o-- Strategy
 HtmlBuilder --> HtmlTag
-HtmlDirector --> HtmlBuilder
+HtmlDirector *-- HtmlBuilder
+HtmlTag <|-- SingleTag
+HtmlTag <|-- DoubleTag
+DoubleTag <|-- UniqueTag
+SingleTag <|-- TagContent
 
 @enduml
