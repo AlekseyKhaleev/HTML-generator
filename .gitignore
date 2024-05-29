@@ -2,5 +2,6 @@
 /non_project_files/
 **/__pycache__/
 *.pyc
+.idea/
 
 /build/
